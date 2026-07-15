@@ -8,6 +8,9 @@
 - 백엔드 로컬 실행: `cd backend && uv run uvicorn app.main:app --reload --port 8001`
   - **주의**: 이 개발 머신에서 포트 8000은 이 프로젝트와 무관한 다른 서비스가 이미 점유 중이라 테스트는 8001로 진행함. 실제 배포/사용 시에는 포트 정책을 다시 확인할 것.
 - 백엔드 `.env`는 `backend/.env.example` 복사해서 사용 (`DATABASE_URL`이 `docker/.env`의 값과 일치해야 함)
+- 패키지 매니저: 프론트엔드 `npm` (frontend/package.json, package-lock.json)
+- 프론트엔드 로컬 실행: `cd frontend && npm install && npm run dev` (기본 5173 포트도 이 머신에서 다른 서비스가 점유 중이면 Vite가 자동으로 5174 등으로 폴백 — 콘솔 로그에서 실제 포트 확인)
+- 프론트엔드 `.env`는 `frontend/.env.example` 복사해서 사용 (`VITE_API_BASE_URL`이 백엔드 실행 포트와 일치해야 함)
 - Git 원격: https://github.com/seungkwon/mediation_platform.git (main 브랜치, 마일스톤마다 커밋/푸시)
 - 마이그레이션: `cd backend && uv run alembic revision --autogenerate -m "..."` 후 `uv run alembic upgrade head`
 
@@ -72,8 +75,17 @@
 - curl로 신고 생성→비관리자 403→관리자 목록/처리(resolved_at 확인)→분쟁 생성(비참여자 403 확인)→관리자 처리→알림 목록/읽음 처리(타인 알림 접근 404 확인)까지 전체 플로우 검증 완료
 - 테스트용으로 로컬 DB에 `admin_users` 레코드를 직접 insert하여 관리자 권한 검증 (실제 관리자 임명 API/절차는 범위 밖 — DB 직접 조작 또는 추후 시딩 스크립트로 처리)
 
+### 9. 프론트엔드 Vite+React+TS+Tailwind 스캐폴딩
+- `npm create vite@latest frontend -- --template react-ts` (React 19, Vite 8, TypeScript 6, oxlint) 후 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, 별도 config 파일 불필요, `src/index.css`의 `@theme`로 커스텀 토큰 정의)
+- 라이브러리 설치: `react-router-dom`, `@tanstack/react-query`, `axios`, `zustand`, `react-hook-form`, `zod`, `@hookform/resolvers`, `@fontsource/pretendard`
+- Pretendard 폰트(400/500/600/700 웨이트, `@fontsource/pretendard` 로컬 번들) + Orange 테마 컬러 토큰(`--color-primary-50~900`, `#F97316` 기준) `src/index.css`에 정의, 다크모드는 `prefers-color-scheme` 기반
+- `vite.config.ts`에 `@` → `src` 경로 별칭, `tsconfig.app.json`에 대응 `paths` 설정
+- `.env.example` 추가 (`VITE_API_BASE_URL=http://localhost:8001/api/v1`, `VITE_WS_BASE_URL`) — 백엔드와 동일하게 포트 8001 사용
+- 기본 Vite 템플릿 데모 콘텐츠(react/vite 로고, hero 이미지 등) 제거하고 테마/폰트 적용을 확인하는 최소 placeholder(`App.tsx`)로 교체
+- `npm run build`(tsc+vite build)와 `npm run lint`(oxlint) 통과 확인, `npm run dev`로 기동 후 curl로 HTML/CSS/폰트 번들 정상 서빙 확인
+- **주의**: 이 개발 머신은 프론트 기본 포트 5173도 무관한 다른 서비스가 점유 중이라 Vite가 자동으로 5174로 폴백함(로그에 안내됨). 또한 Windows에서 Vite dev 서버가 `localhost`를 IPv6(`::1`)로만 바인드하는 경우가 있어 `127.0.0.1`로 접속이 안 되면 `[::1]:PORT`로 접속할 것
+
 ## 남은 마일스톤 (미착수)
-9. 프론트엔드 Vite+React+TS+Tailwind 스캐폴딩 (Pretendard 폰트, Orange 테마)
 10. 프론트엔드 공통 레이아웃/라우팅/API 클라이언트(axios+React Query)
 11. 프론트엔드 화면: 인증 → 판매자/포트폴리오 → 서비스요청/견적 → 채팅 → 리뷰/관리자
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
