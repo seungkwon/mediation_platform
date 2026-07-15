@@ -63,8 +63,16 @@
 - 마일스톤 4에서 이미 구현된 `sellers.py`의 평점 집계(`review_count`/`average_rating`)가 실제 리뷰 데이터로 정상 반영되는 것까지 curl로 확인
 - curl로 회원가입(구매자/판매자)→프로필→요청→견적→낙찰→리뷰 작성→중복 방지(409)→비소유자 거부(403)→목록 조회→판매자 프로필 평점 반영까지 전체 플로우 및 알림 레코드 생성 검증 완료
 
+### 8. 관리자(신고/분쟁) API + 알림 API
+- `POST /api/v1/reports`: 로그인한 사용자 누구나 신고 생성 (target_type: user/portfolio_post/service_request/review/chat_message)
+- `POST /api/v1/disputes`: 서비스 요청의 구매자 또는 해당 요청에 견적을 제출한 판매자만 분쟁 제기 가능 (참여자 검증)
+- `GET /api/v1/admin/reports`, `PATCH /api/v1/admin/reports/{id}`: 관리자 전용(`get_current_admin` 의존성, `admin_users` 테이블 확인), 상태 필터링 지원, `resolved`/`rejected`로 전이 시 `resolved_at` 자동 기록, 신고자에게 `report_update` 알림 발송
+- `GET /api/v1/admin/disputes`, `PATCH /api/v1/admin/disputes/{id}`: 위와 동일한 패턴, `dispute_update` 알림 발송 (신규 `NotificationType` 추가 — 컬럼이 plain varchar라 마이그레이션 불필요)
+- `GET /api/v1/notifications` (`unread_only` 쿼리 지원), `PATCH /api/v1/notifications/{id}/read`: 본인 알림만 조회/처리 가능 (소유자 아니면 404)
+- curl로 신고 생성→비관리자 403→관리자 목록/처리(resolved_at 확인)→분쟁 생성(비참여자 403 확인)→관리자 처리→알림 목록/읽음 처리(타인 알림 접근 404 확인)까지 전체 플로우 검증 완료
+- 테스트용으로 로컬 DB에 `admin_users` 레코드를 직접 insert하여 관리자 권한 검증 (실제 관리자 임명 API/절차는 범위 밖 — DB 직접 조작 또는 추후 시딩 스크립트로 처리)
+
 ## 남은 마일스톤 (미착수)
-8. 관리자(신고/분쟁) API (`/api/v1/admin/...`), 알림 API (`/api/v1/notifications`)
 9. 프론트엔드 Vite+React+TS+Tailwind 스캐폴딩 (Pretendard 폰트, Orange 테마)
 10. 프론트엔드 공통 레이아웃/라우팅/API 클라이언트(axios+React Query)
 11. 프론트엔드 화면: 인증 → 판매자/포트폴리오 → 서비스요청/견적 → 채팅 → 리뷰/관리자

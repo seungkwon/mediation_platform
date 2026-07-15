@@ -72,3 +72,4 @@ class NotificationType(str, enum.Enum):
     new_message = "new_message"
     new_review = "new_review"
     report_update = "report_update"
+    dispute_update = "dispute_update"
