@@ -20,3 +20,4 @@ class Review(UUIDPKMixin, TimestampMixin, Base):
     content: Mapped[str] = mapped_column(Text)
 
     service_request: Mapped["ServiceRequest"] = relationship()  # noqa: F821
+    reviewer: Mapped["User"] = relationship(foreign_keys=[reviewer_id])  # noqa: F821

@@ -54,8 +54,16 @@
 - 수신자가 미접속 상태면 `Notification(type=new_message)` 레코드 생성 (알림 조회 REST API는 마일스톤 8에서 구현 예정, 이번엔 DB 직접 조회로 생성 확인)
 - 실제 서버(포트 8001) 기동 후 curl + `tests/manual_ws_test.py`(websockets 클라이언트)로 검증 완료: 회원가입→판매자프로필→서비스요청→견적제출(방 자동생성)→WS 연결(양방향 송수신, self-echo 포함)→메시지 이력 조회→오프라인 상대방 알림 생성까지 전체 플로우 확인
 
+### 7. 리뷰 API
+- `POST /api/v1/reviews`: 요청 작성자(buyer)만, `awarded` 상태(+`selected_quote_id` 존재)인 요청에 한해 작성 가능. `reviewee_id`는 선택된 견적의 `seller_id`로 서버가 자동 결정
+  - `unique(service_request_id, reviewer_id)` 위반 시 409, 소유자 아님/미낙찰 요청이면 각각 403/400
+  - 리뷰 생성 시 판매자에게 `Notification(type=new_review)` 발송
+- `GET /api/v1/users/{user_id}/reviews`: 특정 사용자가 받은 리뷰 목록 (reviewee 기준, 최신순)
+- `Review` 모델에 `reviewer` relationship 추가 (`ReviewOut` 스키마의 `reviewer: UserPublic` 직렬화용)
+- 마일스톤 4에서 이미 구현된 `sellers.py`의 평점 집계(`review_count`/`average_rating`)가 실제 리뷰 데이터로 정상 반영되는 것까지 curl로 확인
+- curl로 회원가입(구매자/판매자)→프로필→요청→견적→낙찰→리뷰 작성→중복 방지(409)→비소유자 거부(403)→목록 조회→판매자 프로필 평점 반영까지 전체 플로우 및 알림 레코드 생성 검증 완료
+
 ## 남은 마일스톤 (미착수)
-7. 리뷰 API (`/api/v1/reviews`)
 8. 관리자(신고/분쟁) API (`/api/v1/admin/...`), 알림 API (`/api/v1/notifications`)
 9. 프론트엔드 Vite+React+TS+Tailwind 스캐폴딩 (Pretendard 폰트, Orange 테마)
 10. 프론트엔드 공통 레이아웃/라우팅/API 클라이언트(axios+React Query)
