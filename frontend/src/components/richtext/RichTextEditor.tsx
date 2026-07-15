@@ -6,16 +6,10 @@ import { TableRow } from '@tiptap/extension-table-row'
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
+import type { UploadCategory } from '@/api/uploads'
 import { uploadFile } from '@/api/uploads'
 
-import {
-  applyCellBackground,
-  applyCellBorders,
-  PortfolioImage,
-  PortfolioTableCell,
-  PortfolioTableHeader,
-  PortfolioVideo,
-} from './richTextExtensions'
+import { applyCellBackground, applyCellBorders, RichImage, RichTableCell, RichTableHeader, RichVideo } from './richTextExtensions'
 import type { BorderSide } from './richTextExtensions'
 
 interface RichTextEditorProps {
@@ -24,6 +18,7 @@ interface RichTextEditorProps {
   onChange?: (html: string) => void
   error?: string
   readOnly?: boolean
+  uploadCategory?: UploadCategory
 }
 
 const TABLE_CLASS =
@@ -43,7 +38,14 @@ const BORDER_SIDE_OPTIONS: { side: BorderSide; label: string }[] = [
   { side: 'inside', label: '내부' },
 ]
 
-export function RichTextEditor({ label, value, onChange, error, readOnly = false }: RichTextEditorProps) {
+export function RichTextEditor({
+  label,
+  value,
+  onChange,
+  error,
+  readOnly = false,
+  uploadCategory = 'portfolios',
+}: RichTextEditorProps) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -56,13 +58,13 @@ export function RichTextEditor({ label, value, onChange, error, readOnly = false
   const editor = useEditor({
     extensions: [
       StarterKit,
-      TextAlign.configure({ types: ['heading', 'paragraph', 'portfolioImage', 'portfolioVideo'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph', 'richImage', 'richVideo'] }),
       Table.configure({ resizable: true }),
       TableRow,
-      PortfolioTableHeader,
-      PortfolioTableCell,
-      PortfolioImage,
-      PortfolioVideo,
+      RichTableHeader,
+      RichTableCell,
+      RichImage,
+      RichVideo,
     ],
     content: value,
     editable: !readOnly,
@@ -90,11 +92,11 @@ export function RichTextEditor({ label, value, onChange, error, readOnly = false
     setUploading(true)
     setUploadError(null)
     try {
-      const result = await uploadFile('portfolios', file)
+      const result = await uploadFile(uploadCategory, file)
       if (kind === 'image') {
-        editor.chain().focus().insertPortfolioImage(result.file_path).run()
+        editor.chain().focus().insertRichImage(result.file_path).run()
       } else {
-        editor.chain().focus().insertPortfolioVideo(result.file_path).run()
+        editor.chain().focus().insertRichVideo(result.file_path).run()
       }
     } catch {
       setUploadError('파일 업로드에 실패했습니다.')
@@ -183,9 +185,9 @@ export function RichTextEditor({ label, value, onChange, error, readOnly = false
               <ToolbarButton onClick={() => editor?.chain().focus().deleteTable().run()}>표 삭제</ToolbarButton>
               <span className="mx-1 h-4 w-px bg-neutral-300 dark:bg-neutral-600" />
               <span className="text-xs text-neutral-500 dark:text-neutral-400">선택 영역 테두리:</span>
-              {BORDER_SIDE_OPTIONS.map(({ side, label }) => (
+              {BORDER_SIDE_OPTIONS.map(({ side, label: sideLabel }) => (
                 <ToolbarButton key={side} active={borderSides.has(side)} onClick={() => toggleBorderSide(side)}>
-                  {label}
+                  {sideLabel}
                 </ToolbarButton>
               ))}
               <input

@@ -155,6 +155,16 @@
   - 포트폴리오 목록 카드 썸네일이 `object-cover`로 잘려 보이던 것을 `object-contain`(+회색 레터박스)으로 변경해 이미지 전체가 보이도록 수정
 - 검증: `npm run build`(tsc)/`npm run lint`(oxlint) 통과, `alembic upgrade head` 적용 확인, 로컬 dev 서버(백엔드 8001 `--reload`, 프론트 5174) 기동 후 신규/변경 모듈이 HMR로 에러 없이 반영되는 것과 `GET /sellers`, `GET /portfolios/{id}` 응답을 curl로 확인 — 이 환경엔 브라우저 자동화 도구가 없어 실제 드래그 리사이즈/셀 병합/테두리 적용 등 마우스 상호작용은 사용자가 직접 브라우저에서 확인함
 
+**게시판 4종 신규 추가: 공지사항 / 질문답변(QnA) / FAQ / 자료실**
+- **배경**: 포트폴리오용 Rich Text 에디터를 재사용해 성격이 다른 4개 게시판 추가. 공지사항·FAQ·자료실은 관리자만 CRUD, QnA는 구매자/판매자 누구나 질문 작성(본인 글만 수정) + 관리자만 답변(질문 1개당 답변 1개, 재답변은 덮어쓰기), 자료실은 첨부파일 다수 등록(파일당 최대 500MB). 4개 게시판 모두 로그인 사용자만 열람 가능
+- **관리자 플래그 신규 노출**: 기존엔 프론트가 "이 유저가 관리자인지" 판별할 방법이 전혀 없었음(`UserMe`에 role 필드 0건) → `backend/app/api/deps.py`에 `is_admin(db, user)` 헬퍼 추가(기존 `get_current_admin`도 이걸 재사용하도록 리팩터), `_build_user_me()`(`api/v1/auth.py`)에서 `UserMe.is_admin` 채움, `frontend/src/types/user.ts`에 반영
+- **RichTextEditor 공용화**: `frontend/src/components/portfolio/{RichTextEditor.tsx,richTextExtensions.ts}` → `frontend/src/components/richtext/`로 이동. Tiptap 노드 이름을 `portfolioImage`/`portfolioVideo` → `richImage`/`richVideo`로 변경(노드 이름은 저장 HTML에 나타나지 않고 `data-file-path` 태그만 저장되므로 기존 포트폴리오 데이터와 100% 호환), `uploadCategory` prop을 추가해 게시판별 업로드 카테고리를 지정하도록 일반화
+- **업로드 확장**: `backend/app/api/v1/uploads.py`의 `UploadCategory`에 `notices`/`qna`/`faq`/`resources` 추가, `resources` 카테고리는 `max_resource_size_mb`(500, `core/config.py`) 별도 한도 적용, 문서 확장자에 `.ppt/.pptx/.txt/.csv/.rar` 추가
+- **게시판별 구현** (`models/{notice,qna,faq,resource}.py`, `schemas/*`, `api/v1/*`, `frontend/src/{types,api,hooks,components,routes}` 각각 4종): 공지사항·FAQ는 거의 동일한 구조(제목/richtext 본문/draft·published 상태, 관리자 전용), QnA는 `answer`/`answered_at` 필드 + `PATCH /qna/{id}/answer`(관리자 전용) 분리, 자료실은 `ResourcePost`+`ResourceAttachment`(1:N, `QuoteAttachment`/`ServiceRequestAttachment`와 동일 패턴) 구조로 신규 `MultiFileUploader.tsx` 컴포넌트(`RequestNew.tsx`의 다중 업로드 로직을 범용 컴포넌트로 추출) 사용
+- 신규 Alembic 마이그레이션(`fba0383b9eb3`)으로 `notices`/`qna_posts`/`faq_posts`/`resource_posts`/`resource_attachments` 5개 테이블 생성. **참고**: `alembic revision --autogenerate`가 매번 `service_requests.selected_quote_id`의 순환 FK(`use_alter=True`)를 "새로 추가된 FK"로 잘못 감지하는 기존 알려진 오탐이 있어(이번 변경과 무관, 마일스톤 2 때부터 존재하는 구조), 생성된 마이그레이션 파일에서 해당 라인은 수동으로 제거함
+- 헤더에 "공지사항/질문답변/FAQ/자료실" 메뉴 4개 추가(로그인 시에만 노출), 16개 프론트 라우트 등록(게시판당 목록/상세/작성/수정, 전부 `RequireAuth`)
+- 검증: `npm run build`/`npm run lint` 통과, `alembic upgrade head` 적용 후 5개 테이블 생성과 SQLAlchemy `configure_mappers()` 정상 확인, 백엔드 재기동 후 신규 4개 엔드포인트가 401(인증 필요)로 정상 응답하는 것 확인 — 실제 관리자 계정으로 로그인해 작성/수정/답변/첨부파일 업로드를 누르는 것은 사용자가 직접 확인 필요(이 환경엔 브라우저 자동화 도구 없음)
+
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 

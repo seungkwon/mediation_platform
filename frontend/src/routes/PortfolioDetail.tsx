@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { PagePlaceholder } from '@/components/common/PagePlaceholder'
-import { RichTextEditor } from '@/components/portfolio/RichTextEditor'
+import { RichTextEditor } from '@/components/richtext/RichTextEditor'
 import { usePortfolio } from '@/hooks/usePortfolios'
 
 export default function PortfolioDetail() {

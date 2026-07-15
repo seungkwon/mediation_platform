@@ -4,31 +4,31 @@ import { z } from 'zod'
 
 import { TextField } from '@/components/common/TextField'
 import { RichTextEditor } from '@/components/richtext/RichTextEditor'
-import type { PortfolioPost, PortfolioPostInput } from '@/types/seller'
+import type { Notice, NoticeInput } from '@/types/notice'
 
-const portfolioSchema = z.object({
+const noticeSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요.').max(255),
   content: z.string().min(1, '내용을 입력해주세요.'),
   status: z.enum(['draft', 'published']),
 })
 
-type PortfolioFormValues = z.infer<typeof portfolioSchema>
+type NoticeFormValues = z.infer<typeof noticeSchema>
 
-interface PortfolioFormProps {
-  initial?: PortfolioPost
-  onSubmit: (payload: PortfolioPostInput) => void
+interface NoticeFormProps {
+  initial?: Notice
+  onSubmit: (payload: NoticeInput) => void
   isSubmitting?: boolean
   submitLabel: string
 }
 
-export function PortfolioForm({ initial, onSubmit, isSubmitting, submitLabel }: PortfolioFormProps) {
+export function NoticeForm({ initial, onSubmit, isSubmitting, submitLabel }: NoticeFormProps) {
   const {
     register,
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<PortfolioFormValues>({
-    resolver: zodResolver(portfolioSchema),
+  } = useForm<NoticeFormValues>({
+    resolver: zodResolver(noticeSchema),
     defaultValues: {
       title: initial?.title ?? '',
       content: initial?.content ?? '',
@@ -48,7 +48,7 @@ export function PortfolioForm({ initial, onSubmit, isSubmitting, submitLabel }: 
             value={field.value}
             onChange={field.onChange}
             error={errors.content?.message}
-            uploadCategory="portfolios"
+            uploadCategory="notices"
           />
         )}
       />

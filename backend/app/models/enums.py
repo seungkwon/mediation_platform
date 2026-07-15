@@ -13,6 +13,26 @@ class PortfolioStatus(str, enum.Enum):
     published = "published"
 
 
+class NoticeStatus(str, enum.Enum):
+    draft = "draft"
+    published = "published"
+
+
+class QnaStatus(str, enum.Enum):
+    unanswered = "unanswered"
+    answered = "answered"
+
+
+class FaqStatus(str, enum.Enum):
+    draft = "draft"
+    published = "published"
+
+
+class ResourceStatus(str, enum.Enum):
+    draft = "draft"
+    published = "published"
+
+
 class ServiceRequestStatus(str, enum.Enum):
     open = "open"
     awarded = "awarded"

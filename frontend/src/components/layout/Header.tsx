@@ -12,6 +12,13 @@ const baseNavItems = [
   { to: '/my/reviews', label: '내 리뷰' },
 ]
 
+const boardNavItems = [
+  { to: '/notices', label: '공지사항' },
+  { to: '/qna', label: '질문답변' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/resources', label: '자료실' },
+]
+
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
     isActive
@@ -23,7 +30,9 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
-  const navItems = user ? [...baseNavItems, { to: `/sellers/${user.id}`, label: '판매자 프로필' }] : baseNavItems
+  const navItems = user
+    ? [...baseNavItems, ...boardNavItems, { to: `/sellers/${user.id}`, label: '판매자 프로필' }]
+    : baseNavItems
 
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90">

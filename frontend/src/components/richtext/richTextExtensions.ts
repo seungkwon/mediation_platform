@@ -34,13 +34,13 @@ const cellStyleAttributes = {
   borderLeft: createBorderSideAttribute('borderLeft', 'border-left', 'data-border-left'),
 }
 
-export const PortfolioTableCell = TableCell.extend({
+export const RichTableCell = TableCell.extend({
   addAttributes() {
     return { ...this.parent?.(), ...cellStyleAttributes }
   },
 })
 
-export const PortfolioTableHeader = TableHeader.extend({
+export const RichTableHeader = TableHeader.extend({
   addAttributes() {
     return { ...this.parent?.(), ...cellStyleAttributes }
   },
@@ -100,11 +100,11 @@ export function applyCellBackground(editor: Editor, color: string) {
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
-    portfolioImage: {
-      insertPortfolioImage: (filePath: string) => ReturnType
+    richImage: {
+      insertRichImage: (filePath: string) => ReturnType
     }
-    portfolioVideo: {
-      insertPortfolioVideo: (filePath: string) => ReturnType
+    richVideo: {
+      insertRichVideo: (filePath: string) => ReturnType
     }
   }
 }
@@ -197,8 +197,8 @@ const widthAttribute = {
   },
 }
 
-export const PortfolioImage = Node.create({
-  name: 'portfolioImage',
+export const RichImage = Node.create({
+  name: 'richImage',
   group: 'block',
   atom: true,
   draggable: true,
@@ -224,7 +224,7 @@ export const PortfolioImage = Node.create({
 
   addCommands() {
     return {
-      insertPortfolioImage:
+      insertRichImage:
         (filePath: string) =>
         ({ commands }) =>
           commands.insertContent({ type: this.name, attrs: { filePath } }),
@@ -232,8 +232,8 @@ export const PortfolioImage = Node.create({
   },
 })
 
-export const PortfolioVideo = Node.create({
-  name: 'portfolioVideo',
+export const RichVideo = Node.create({
+  name: 'richVideo',
   group: 'block',
   atom: true,
   draggable: true,
@@ -259,7 +259,7 @@ export const PortfolioVideo = Node.create({
 
   addCommands() {
     return {
-      insertPortfolioVideo:
+      insertRichVideo:
         (filePath: string) =>
         ({ commands }) =>
           commands.insertContent({ type: this.name, attrs: { filePath } }),

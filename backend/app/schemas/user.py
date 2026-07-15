@@ -21,6 +21,7 @@ class UserMe(ORMBase):
     is_active: bool
     created_at: datetime
     has_seller_profile: bool = False
+    is_admin: bool = False
 
 
 class UserUpdate(ORMBase):

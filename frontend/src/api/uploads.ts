@@ -1,6 +1,15 @@
 import { apiClient } from './client'
 
-export type UploadCategory = 'profiles' | 'portfolios' | 'service_requests' | 'quotes' | 'chat'
+export type UploadCategory =
+  | 'profiles'
+  | 'portfolios'
+  | 'service_requests'
+  | 'quotes'
+  | 'chat'
+  | 'notices'
+  | 'qna'
+  | 'faq'
+  | 'resources'
 
 export interface UploadResult {
   file_path: string

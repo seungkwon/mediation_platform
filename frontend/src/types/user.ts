@@ -13,4 +13,5 @@ export interface UserMe {
   is_active: boolean
   created_at: string
   has_seller_profile: boolean
+  is_admin: boolean
 }

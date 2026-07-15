@@ -5,9 +5,13 @@ from app.api.v1 import (
     auth,
     categories,
     chat,
+    faq,
+    notices,
     notifications,
     portfolios,
+    qna,
     quotes,
+    resources,
     reviews,
     sellers,
     service_requests,
@@ -28,3 +32,7 @@ api_router.include_router(chat.router)
 api_router.include_router(reviews.router)
 api_router.include_router(admin.router)
 api_router.include_router(notifications.router)
+api_router.include_router(notices.router)
+api_router.include_router(qna.router)
+api_router.include_router(faq.router)
+api_router.include_router(resources.router)

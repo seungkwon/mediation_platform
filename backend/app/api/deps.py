@@ -46,11 +46,15 @@ async def get_current_user_optional(
         return None
 
 
+async def is_admin(db: AsyncSession, user: User) -> bool:
+    result = await db.execute(select(AdminUser).where(AdminUser.user_id == user.id))
+    return result.scalar_one_or_none() is not None
+
+
 async def get_current_admin(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    result = await db.execute(select(AdminUser).where(AdminUser.user_id == user.id))
-    if result.scalar_one_or_none() is None:
+    if not await is_admin(db, user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "관리자 권한이 필요합니다.")
     return user

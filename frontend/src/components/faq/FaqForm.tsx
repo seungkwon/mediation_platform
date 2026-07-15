@@ -4,31 +4,31 @@ import { z } from 'zod'
 
 import { TextField } from '@/components/common/TextField'
 import { RichTextEditor } from '@/components/richtext/RichTextEditor'
-import type { PortfolioPost, PortfolioPostInput } from '@/types/seller'
+import type { FaqPost, FaqPostInput } from '@/types/faq'
 
-const portfolioSchema = z.object({
-  title: z.string().min(1, '제목을 입력해주세요.').max(255),
-  content: z.string().min(1, '내용을 입력해주세요.'),
+const faqSchema = z.object({
+  title: z.string().min(1, '질문을 입력해주세요.').max(255),
+  content: z.string().min(1, '답변을 입력해주세요.'),
   status: z.enum(['draft', 'published']),
 })
 
-type PortfolioFormValues = z.infer<typeof portfolioSchema>
+type FaqFormValues = z.infer<typeof faqSchema>
 
-interface PortfolioFormProps {
-  initial?: PortfolioPost
-  onSubmit: (payload: PortfolioPostInput) => void
+interface FaqFormProps {
+  initial?: FaqPost
+  onSubmit: (payload: FaqPostInput) => void
   isSubmitting?: boolean
   submitLabel: string
 }
 
-export function PortfolioForm({ initial, onSubmit, isSubmitting, submitLabel }: PortfolioFormProps) {
+export function FaqForm({ initial, onSubmit, isSubmitting, submitLabel }: FaqFormProps) {
   const {
     register,
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<PortfolioFormValues>({
-    resolver: zodResolver(portfolioSchema),
+  } = useForm<FaqFormValues>({
+    resolver: zodResolver(faqSchema),
     defaultValues: {
       title: initial?.title ?? '',
       content: initial?.content ?? '',
@@ -38,17 +38,17 @@ export function PortfolioForm({ initial, onSubmit, isSubmitting, submitLabel }: 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-      <TextField label="제목" id="title" error={errors.title} {...register('title')} />
+      <TextField label="질문" id="title" error={errors.title} {...register('title')} />
       <Controller
         name="content"
         control={control}
         render={({ field }) => (
           <RichTextEditor
-            label="내용"
+            label="답변"
             value={field.value}
             onChange={field.onChange}
             error={errors.content?.message}
-            uploadCategory="portfolios"
+            uploadCategory="faq"
           />
         )}
       />

@@ -10,11 +10,26 @@ from app.models.user import User
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-UploadCategory = Literal["profiles", "portfolios", "service_requests", "quotes", "chat"]
+UploadCategory = Literal[
+    "profiles", "portfolios", "service_requests", "quotes", "chat", "notices", "qna", "faq", "resources"
+]
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm"}
-DOCUMENT_EXTENSIONS = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".hwp", ".zip"}
+DOCUMENT_EXTENSIONS = {
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".csv",
+    ".hwp",
+    ".zip",
+    ".rar",
+}
 ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | DOCUMENT_EXTENSIONS
 
 
@@ -28,7 +43,12 @@ async def upload_file(
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"허용되지 않는 파일 형식입니다: {ext}")
 
-    max_size_mb = settings.max_video_size_mb if ext in VIDEO_EXTENSIONS else settings.max_image_size_mb
+    if category == "resources":
+        max_size_mb = settings.max_resource_size_mb
+    elif ext in VIDEO_EXTENSIONS:
+        max_size_mb = settings.max_video_size_mb
+    else:
+        max_size_mb = settings.max_image_size_mb
     max_bytes = max_size_mb * 1024 * 1024
 
     content = await file.read()

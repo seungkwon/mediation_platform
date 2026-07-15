@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_image_size_mb: int = 10
     max_video_size_mb: int = 100
+    max_resource_size_mb: int = 500
 
     naver_client_id: str = ""
     naver_client_secret: str = ""
