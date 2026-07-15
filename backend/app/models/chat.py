@@ -20,6 +20,9 @@ class ChatRoom(UUIDPKMixin, Base):
     seller_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    service_request: Mapped["ServiceRequest"] = relationship()  # noqa: F821
+    buyer: Mapped["User"] = relationship(foreign_keys=[buyer_id])  # noqa: F821
+    seller: Mapped["User"] = relationship(foreign_keys=[seller_id])  # noqa: F821
     messages: Mapped[list["ChatMessage"]] = relationship(
         back_populates="chat_room", cascade="all, delete-orphan", order_by="ChatMessage.created_at"
     )

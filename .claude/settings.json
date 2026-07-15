@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Write(D:/dev/python_lecture/mediation_platform/**)",
+      "Edit(D:/dev/python_lecture/mediation_platform/**)"
+    ]
+  }
+}
