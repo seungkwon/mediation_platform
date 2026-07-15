@@ -85,8 +85,17 @@
 - `npm run build`(tsc+vite build)와 `npm run lint`(oxlint) 통과 확인, `npm run dev`로 기동 후 curl로 HTML/CSS/폰트 번들 정상 서빙 확인
 - **주의**: 이 개발 머신은 프론트 기본 포트 5173도 무관한 다른 서비스가 점유 중이라 Vite가 자동으로 5174로 폴백함(로그에 안내됨). 또한 Windows에서 Vite dev 서버가 `localhost`를 IPv6(`::1`)로만 바인드하는 경우가 있어 `127.0.0.1`로 접속이 안 되면 `[::1]:PORT`로 접속할 것
 
+### 10. 프론트엔드 공통 레이아웃/라우팅/API 클라이언트
+- `src/api/client.ts`: axios 인스턴스(`VITE_API_BASE_URL`), 요청 인터셉터로 zustand 스토어의 accessToken 부착, 응답 인터셉터로 401 시 `/auth/refresh` 1회 자동 재시도(동시 다발 401은 in-flight `refreshPromise` 하나로 합침) 후 실패하면 로그아웃 처리
+- `src/store/authStore.ts`: zustand `persist` 미들웨어로 accessToken/refreshToken/user를 localStorage에 저장
+- `src/routes/router.tsx`: `createBrowserRouter`로 DetailedPlan 8.1의 라우트 전체 스켈레톤 구성 (`RootLayout` 아래 인증/판매자/포트폴리오/요청/견적/채팅/리뷰/관리자 라우트), 보호 라우트는 `RequireAuth`(accessToken 없으면 `/login`으로 redirect, `state.from`으로 복귀 경로 보존)
+- `src/components/layout/{Header,Footer,RootLayout}.tsx`: 반응형 헤더(모바일 햄버거 메뉴, `md` 이상에서 가로 네비게이션), 로그인 상태에 따라 로그인/회원가입 또는 사용자명/로그아웃 표시
+- 화면 자체는 아직 placeholder(`PagePlaceholder` 컴포넌트)이며, 실제 폼/데이터 화면은 마일스톤 11에서 구현 예정 — 다만 `Home.tsx`는 `GET /categories`를 React Query(`useCategories`)로 실제 연동해 API 클라이언트 배관이 정상 동작하는지 확인하는 용도로 구현
+- **버그 발견 및 수정**: 프론트 개발 서버가 이 머신에서 5173 포트 충돌로 5174로 폴백하는데, 백엔드 `CORSMiddleware`가 `frontend_origin`(기본값 `http://localhost:5173`) 단일 origin만 허용하고 있어 실제 브라우저에서 API 호출 시 CORS preflight가 400으로 막히는 문제를 발견 (`backend/app/main.py`) → `allow_origin_regex=r"http://localhost:\d+"`를 추가해 로컬 개발 중 임의 포트의 localhost origin을 허용하도록 수정, curl로 preflight(OPTIONS)와 실제 GET 응답의 `access-control-allow-origin` 헤더 확인 완료
+- 검증: `npm run build`/`npm run lint` 통과, `npm run dev`로 기동 후 Vite가 변환한 각 신규 모듈(`main.tsx`, `router.tsx`, `client.ts`, `authStore.ts`, `Home.tsx`, `Header.tsx`, `RequireAuth.tsx`)이 200으로 정상 서빙되는지, 백엔드 `/categories`가 프론트 origin으로부터 CORS 헤더와 함께 정상 응답하는지 curl로 확인
+- **주의**: 이 환경에는 브라우저 자동화 도구가 없어 실제 브라우저 렌더링(라우팅 전환, 폼 상호작용, 반응형 레이아웃 육안 확인)은 수행하지 못했음 — 다음 세션에서 사람이 직접 `npm run dev`로 브라우저 확인 권장
+
 ## 남은 마일스톤 (미착수)
-10. 프론트엔드 공통 레이아웃/라우팅/API 클라이언트(axios+React Query)
 11. 프론트엔드 화면: 인증 → 판매자/포트폴리오 → 서비스요청/견적 → 채팅 → 리뷰/관리자
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 

@@ -1,0 +1,16 @@
+export interface UserPublic {
+  id: string
+  name: string
+  profile_image_path: string | null
+}
+
+export interface UserMe {
+  id: string
+  email: string
+  name: string
+  phone: string | null
+  profile_image_path: string | null
+  is_active: boolean
+  created_at: string
+  has_seller_profile: boolean
+}
