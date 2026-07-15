@@ -113,6 +113,17 @@
 - 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 실제 화면이 수행할 전체 시퀀스를 재현 — 기존 판매자 프로필 조회, 이미지 업로드(`/uploads/portfolios`) → 포트폴리오 생성(미디어 포함) → 목록에 썸네일 반영 → 정적 파일 서빙(`/static/...`) 200 확인 → 수정(버그 발견/수정) → 비소유자 403 → 삭제(204) → 신규 유저 판매자 프로필 미존재(404) → 등록(201) → 재조회(200) 전 과정이 프론트 TS 타입과 정확히 일치
 - 남은 화면: 서비스요청/견적(역경매 핵심 플로우), 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
 
+**서비스요청/견적(역경매 핵심 플로우) 화면 추가 완료**
+- `src/types/{serviceRequest,quote}.ts`, `src/api/{serviceRequests,quotes}.ts`, `src/hooks/{useServiceRequests,useQuotes}.ts`
+- `src/components/common/StatusBadge.tsx`(요청/견적 상태 공용 배지), `src/lib/format.ts`(날짜/통화 포맷)
+- `RequestsList.tsx`(`/requests`): 카테고리 필터 + 카드 그리드, `RequestNew.tsx`(`/requests/new`): 제목/설명/카테고리/예산/입찰마감(`datetime-local`→ISO 변환)/파일 업로드(확장자로 이미지·첨부파일 자동 분류, `/uploads/service_requests` 사용)
+- `RequestDetail.tsx`(`/requests/:id`): 상세 정보 + 이미지/첨부 표시, 구매자면 취소 버튼, 판매자(프로필 보유 + `open` 상태)면 견적 제출/수정 폼, 구매자면 견적 목록에서 오픈/선택 버튼 — 견적 목록 조회는 로그인 시에만 시도(비참여자 403은 조용히 무시)
+- `MyRequests.tsx`(`/my/requests`): 내 요청 목록 + 취소, `MyQuotes.tsx`(`/my/quotes`): 내가 제출한 견적 목록 + 요청 바로가기
+- **버그 2건 발견 및 수정** (모두 `backend/app/api/v1/service_requests.py`):
+  1. `GET /service-requests`, `GET /service-requests/mine` 둘 다 500 에러 — `ServiceRequest`↔`Quote`는 `quotes.service_request_id`와 `service_requests.selected_quote_id` 두 개의 FK 경로가 있어 `.outerjoin(Quote)`가 SQLAlchemy `AmbiguousForeignKeysError`를 던짐 → `.outerjoin(Quote, Quote.service_request_id == ServiceRequest.id)`로 조인 조건 명시. 마일스톤 5에서 curl 검증한 건 `{id}/quotes`(견적 목록)였고 요청 자체 목록(`/service-requests`, `/mine`)은 실제로 호출된 적이 없어 지금까지 발견되지 않았던 것으로 보임
+- 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 실제 화면 시퀀스 재현 — 요청 생성 → 목록 조회(버그 발견/수정) → 견적 제출 → 구매자 시점 sealed 마스킹(price/delivery_days/description null) 확인 → 판매자 시점 언마스킹 확인 → 오픈 → 선택 → 요청 상태 `awarded` 전이 확인 → `/quotes/mine` 확인 → 취소 플로우 + 비소유자 403 확인, 전 구간 프론트 TS 타입과 정확히 일치
+- 남은 화면: 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
+
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 
