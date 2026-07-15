@@ -124,6 +124,14 @@
 - 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 실제 화면 시퀀스 재현 — 요청 생성 → 목록 조회(버그 발견/수정) → 견적 제출 → 구매자 시점 sealed 마스킹(price/delivery_days/description null) 확인 → 판매자 시점 언마스킹 확인 → 오픈 → 선택 → 요청 상태 `awarded` 전이 확인 → `/quotes/mine` 확인 → 취소 플로우 + 비소유자 403 확인, 전 구간 프론트 TS 타입과 정확히 일치
 - 남은 화면: 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
 
+**채팅(WebSocket) 화면 추가 완료**
+- `src/types/chat.ts`, `src/api/chat.ts`(REST: 방 목록/메시지 이력), `src/hooks/{useChatRooms,useChatMessages}.ts`
+- `src/hooks/useChatSocket.ts`: `VITE_WS_BASE_URL` + accessToken으로 `/ws/chat/{roomId}` 연결, roomId/accessToken 변경 시에만 재연결(`onMessage` 콜백은 ref로 보관해 재연결 루프 방지), 연결 상태(`connected`)와 `sendMessage` 제공
+- `ChatList.tsx`(`/chat`): 내 채팅방 목록, 상대방(구매자/판매자 중 나 아닌 쪽) 이름·마지막 메시지·요청 제목 표시
+- `ChatRoomPage.tsx`(`/chat/:roomId`): REST로 이력 로드 후 WS로 실시간 수신 메시지를 별도 상태에 추가해 병합, 서버가 발신자 본인에게도 echo를 보내는 구조(마일스톤 6)에 맞춰 낙관적 업데이트 없이 echo만으로 자기 메시지 렌더링(id 기준 중복 방지), 말풍선 좌우 정렬로 내 메시지/상대 메시지 구분
+- 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, 기존 `tests/manual_ws_test.py`(milestone 6에서 작성된 WS 클라이언트 스크립트)를 재사용해 REST(`/chat/rooms`, `/chat/rooms/{id}/messages`)와 WS 메시지 교환을 함께 검증 — 응답/수신 페이로드가 프론트 `ChatMessage`/`ChatRoom` 타입과 정확히 일치, 메시지 전송 후 방 목록의 `last_message`/`last_message_at`도 갱신됨을 확인. 이번엔 백엔드 버그 없이 통과
+- 남은 화면: 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
+
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 
