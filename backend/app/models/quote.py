@@ -26,6 +26,7 @@ class Quote(UUIDPKMixin, TimestampMixin, Base):
     service_request: Mapped["ServiceRequest"] = relationship(  # noqa: F821
         back_populates="quotes", foreign_keys=[service_request_id]
     )
+    seller: Mapped["User"] = relationship(foreign_keys=[seller_id])  # noqa: F821
     attachments: Mapped[list["QuoteAttachment"]] = relationship(
         back_populates="quote", cascade="all, delete-orphan"
     )

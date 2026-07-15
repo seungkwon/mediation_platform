@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import ServiceRequestStatus
-from app.schemas.common import ORMBase
+from app.schemas.common import AttachmentInput, ORMBase
 from app.schemas.user import UserPublic
 
 
@@ -29,7 +29,7 @@ class ServiceRequestCreate(BaseModel):
     budget_max: int | None = None
     bid_deadline: datetime
     image_paths: list[str] = []
-    attachment_paths: list[str] = []
+    attachments: list[AttachmentInput] = []
 
     @field_validator("bid_deadline")
     @classmethod

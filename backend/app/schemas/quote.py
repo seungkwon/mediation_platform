@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.models.enums import QuoteStatus
-from app.schemas.common import ORMBase
+from app.schemas.common import AttachmentInput, ORMBase
 from app.schemas.user import UserPublic
 
 
@@ -18,31 +18,19 @@ class QuoteCreate(BaseModel):
     price: int = Field(gt=0)
     delivery_days: int = Field(gt=0)
     description: str = Field(min_length=1)
-    attachment_paths: list[str] = []
-
-
-class QuoteUpdate(BaseModel):
-    price: int | None = Field(default=None, gt=0)
-    delivery_days: int | None = Field(default=None, gt=0)
-    description: str | None = None
-
-
-class QuoteSummary(ORMBase):
-    """구매자가 견적을 오픈하기 전 목록에서 보는 요약 정보 (가격 등 상세는 오픈 후 공개)"""
-
-    id: uuid.UUID
-    seller: UserPublic
-    status: QuoteStatus
-    created_at: datetime
+    attachments: list[AttachmentInput] = []
 
 
 class QuoteOut(ORMBase):
+    """price/delivery_days/description/attachments는 구매자가 아직 오픈하지 않은(submitted) 견적의 경우
+    비공개(None/빈 배열)로 마스킹되어 내려간다. 견적을 제출한 판매자 본인 또는 오픈/선택된 견적은 항상 전체 공개."""
+
     id: uuid.UUID
     service_request_id: uuid.UUID
     seller: UserPublic
-    price: int
-    delivery_days: int
-    description: str
+    price: int | None = None
+    delivery_days: int | None = None
+    description: str | None = None
     status: QuoteStatus
     opened_at: datetime | None = None
     attachments: list[QuoteAttachmentOut] = []

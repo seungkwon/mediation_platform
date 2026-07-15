@@ -28,6 +28,7 @@ class ServiceRequest(UUIDPKMixin, TimestampMixin, Base):
         nullable=True,
     )
 
+    buyer: Mapped["User"] = relationship(foreign_keys=[buyer_id])  # noqa: F821
     images: Mapped[list["ServiceRequestImage"]] = relationship(
         back_populates="service_request", cascade="all, delete-orphan", order_by="ServiceRequestImage.sort_order"
     )
