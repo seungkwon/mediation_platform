@@ -95,8 +95,17 @@
 - 검증: `npm run build`/`npm run lint` 통과, `npm run dev`로 기동 후 Vite가 변환한 각 신규 모듈(`main.tsx`, `router.tsx`, `client.ts`, `authStore.ts`, `Home.tsx`, `Header.tsx`, `RequireAuth.tsx`)이 200으로 정상 서빙되는지, 백엔드 `/categories`가 프론트 origin으로부터 CORS 헤더와 함께 정상 응답하는지 curl로 확인
 - **주의**: 이 환경에는 브라우저 자동화 도구가 없어 실제 브라우저 렌더링(라우팅 전환, 폼 상호작용, 반응형 레이아웃 육안 확인)은 수행하지 못했음 — 다음 세션에서 사람이 직접 `npm run dev`로 브라우저 확인 권장
 
+### 11. 프론트엔드 화면 (진행 중 — 인증 화면 완료)
+- `src/api/auth.ts`(signup/login 호출), `src/hooks/{useLogin,useSignup}.ts`(React Query mutation, 성공 시 `authStore.setAuth`로 토큰/유저 저장)
+- `src/components/common/TextField.tsx`: react-hook-form `register()`와 바로 스프레드 가능한 공용 input 컴포넌트 (label+error 메시지 포함, React 19라 `forwardRef` 불필요)
+- `src/lib/errors.ts`: axios 에러에서 백엔드 `{detail: string}` 메시지를 추출하는 헬퍼
+- `Login.tsx`: react-hook-form + zod 검증, 로그인 성공 시 `RequireAuth`가 넘겨준 `location.state.from`으로 복귀(없으면 `/`)
+- `Signup.tsx`: 이름/이메일/비밀번호(8자 이상)/전화번호(선택) 검증, 가입 즉시 로그인 처리(백엔드가 가입 시 토큰도 함께 발급)
+- 소셜 로그인 버튼은 아직 미구현 — 백엔드가 Provider 앱 미등록으로 501을 반환하는 상태라 실제 동작 가능한 UI를 만들 수 없어 보류 (알려진 이슈 참고)
+- 검증: `npm run build`/`npm run lint` 통과, `npm run dev`로 신규 모듈 200 서빙 확인, curl로 프론트 origin에서 회원가입(201)→중복가입(409)→오답 로그인(401)→정상 로그인(200) 응답 바디가 프론트 TS 타입(`TokenResponse`/`UserMe`) 및 `extractErrorMessage`가 기대하는 `{detail}` 형태와 정확히 일치하는지 확인
+- 남은 화면: 판매자/포트폴리오, 서비스요청/견적(역경매 핵심 플로우), 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
+
 ## 남은 마일스톤 (미착수)
-11. 프론트엔드 화면: 인증 → 판매자/포트폴리오 → 서비스요청/견적 → 채팅 → 리뷰/관리자
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 
 ## 알려진 이슈 / TODO
