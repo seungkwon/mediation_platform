@@ -31,7 +31,7 @@
 
 ### 1.3 포트폴리오 플로우
 - 판매자는 `SellerProfile`에 소개/경력 정보를 등록하고, 여러 개의 `PortfolioPost`(블로그형 게시물)를 작성
-- 게시물 하나에 텍스트 + 이미지 여러 장 + 동영상 + (선택) 첨부파일 구성 가능
+- 게시물은 Rich Text 에디터(Tiptap)로 작성 — 텍스트 작성 중 원하는 위치에 이미지/동영상을 바로 삽입해 하나의 `content`(HTML)로 저장 (별도 미디어 목록 테이블 없음)
 - 게시물은 초안(draft)/게시(published) 상태 관리
 
 ---
@@ -132,18 +132,11 @@
 | id | UUID PK | |
 | seller_profile_id | FK | |
 | title | varchar | |
-| content | text (markdown) | |
+| content | text (HTML, Rich Text 에디터로 생성 — 이미지/동영상이 `data-file-path` 속성으로 본문에 인라인 포함) | |
 | status | enum(draft, published) | |
 | created_at / updated_at | timestamptz | |
 
-**portfolio_media**
-| 컬럼 | 타입 | 설명 |
-|---|---|---|
-| id | UUID PK | |
-| portfolio_post_id | FK | |
-| media_type | enum(image, video) | |
-| file_path | varchar | |
-| sort_order | int | |
+> `portfolio_media` 테이블은 폐지됨 (이미지/동영상이 `content`에 통합되며, 목록 썸네일은 `content`에서 첫 이미지를 파싱해 추출)
 
 ### 4.3 카테고리
 
@@ -316,7 +309,7 @@ open ──(구매자가 취소)──▶ cancelled
 | 인증 | `POST /auth/signup`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET/POST /auth/{provider}/callback` |
 | 사용자 | `GET/PATCH /users/me`, `GET /users/{id}` |
 | 판매자 프로필 | `POST/GET/PATCH /sellers/me`, `GET /sellers/{id}` |
-| 포트폴리오 | `POST/GET/PATCH/DELETE /portfolios`, `POST /portfolios/{id}/media` |
+| 포트폴리오 | `POST/GET/PATCH/DELETE /portfolios` (본문에 이미지/동영상 인라인 포함, 별도 미디어 엔드포인트 없음) |
 | 카테고리 | `GET /categories` |
 | 서비스 요청 | `POST/GET/PATCH/DELETE /service-requests`, `GET /service-requests/{id}` |
 | 견적 | `POST /service-requests/{id}/quotes`, `GET /service-requests/{id}/quotes`, `POST /quotes/{id}/open`, `POST /quotes/{id}/select` |

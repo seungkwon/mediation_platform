@@ -19,21 +19,7 @@ export interface SellerProfileInput {
   career_years?: number | null
 }
 
-export type MediaType = 'image' | 'video'
 export type PortfolioStatus = 'draft' | 'published'
-
-export interface PortfolioMedia {
-  id: string
-  media_type: MediaType
-  file_path: string
-  sort_order: number
-}
-
-export interface PortfolioMediaInput {
-  media_type: MediaType
-  file_path: string
-  sort_order: number
-}
 
 export interface PortfolioPost {
   id: string
@@ -41,7 +27,6 @@ export interface PortfolioPost {
   title: string
   content: string
   status: PortfolioStatus
-  media: PortfolioMedia[]
   created_at: string
   updated_at: string
 }
@@ -58,5 +43,4 @@ export interface PortfolioPostInput {
   title: string
   content: string
   status: PortfolioStatus
-  media: PortfolioMediaInput[]
 }

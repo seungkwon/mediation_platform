@@ -4,7 +4,7 @@ from app.models.chat import ChatMessage, ChatRoom
 from app.models.notification import Notification
 from app.models.quote import Quote, QuoteAttachment
 from app.models.review import Review
-from app.models.seller import PortfolioMedia, PortfolioPost, SellerProfile
+from app.models.seller import PortfolioPost, SellerProfile
 from app.models.service_request import (
     ServiceRequest,
     ServiceRequestAttachment,
@@ -23,7 +23,6 @@ __all__ = [
     "Quote",
     "QuoteAttachment",
     "Review",
-    "PortfolioMedia",
     "PortfolioPost",
     "SellerProfile",
     "ServiceRequest",

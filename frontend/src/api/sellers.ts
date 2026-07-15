@@ -1,6 +1,11 @@
 import { apiClient } from './client'
 import type { SellerProfile, SellerProfileInput } from '@/types/seller'
 
+export async function fetchSellers(params?: { category_id?: string }): Promise<SellerProfile[]> {
+  const { data } = await apiClient.get<SellerProfile[]>('/sellers', { params })
+  return data
+}
+
 export async function fetchSellerProfile(userId: string): Promise<SellerProfile> {
   const { data } = await apiClient.get<SellerProfile>(`/sellers/${userId}`)
   return data

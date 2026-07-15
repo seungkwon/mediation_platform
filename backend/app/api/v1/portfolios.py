@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,11 +9,18 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import get_current_user, get_current_user_optional
 from app.db.session import get_db
 from app.models.enums import PortfolioStatus
-from app.models.seller import PortfolioMedia, PortfolioPost, SellerProfile
+from app.models.seller import PortfolioPost, SellerProfile
 from app.models.user import User
 from app.schemas.seller import PortfolioPostCreate, PortfolioPostOut, PortfolioPostSummary, PortfolioPostUpdate
 
 router = APIRouter(prefix="/portfolios", tags=["portfolios"])
+
+_THUMBNAIL_PATTERN = re.compile(r'<img[^>]*data-file-path="([^"]+)"')
+
+
+def _extract_thumbnail(content: str) -> str | None:
+    match = _THUMBNAIL_PATTERN.search(content)
+    return match.group(1) if match else None
 
 
 async def _get_my_seller_profile(db: AsyncSession, user: User) -> SellerProfile:
@@ -35,11 +43,10 @@ async def create_portfolio(
         title=payload.title,
         content=payload.content,
         status=payload.status,
-        media=[PortfolioMedia(**m.model_dump()) for m in payload.media],
     )
     db.add(post)
     await db.commit()
-    await db.refresh(post, attribute_names=["media"])
+    await db.refresh(post)
     return post
 
 
@@ -57,7 +64,6 @@ async def list_portfolios(
     is_owner = user is not None and user.id == seller_id
     query = (
         select(PortfolioPost)
-        .options(selectinload(PortfolioPost.media))
         .where(PortfolioPost.seller_profile_id == profile.id)
         .order_by(PortfolioPost.created_at.desc())
     )
@@ -70,7 +76,7 @@ async def list_portfolios(
             id=p.id,
             title=p.title,
             status=p.status,
-            thumbnail=p.media[0].file_path if p.media else None,
+            thumbnail=_extract_thumbnail(p.content),
             created_at=p.created_at,
         )
         for p in posts
@@ -80,7 +86,7 @@ async def list_portfolios(
 async def _get_portfolio_or_404(db: AsyncSession, post_id: uuid.UUID) -> PortfolioPost:
     result = await db.execute(
         select(PortfolioPost)
-        .options(selectinload(PortfolioPost.media), selectinload(PortfolioPost.seller_profile))
+        .options(selectinload(PortfolioPost.seller_profile))
         .where(PortfolioPost.id == post_id)
     )
     post = result.scalar_one_or_none()
@@ -114,14 +120,11 @@ async def update_portfolio(
         raise HTTPException(status.HTTP_403_FORBIDDEN, "본인 게시물만 수정할 수 있습니다.")
 
     data = payload.model_dump(exclude_unset=True)
-    media_payload = data.pop("media", None)
     for field, value in data.items():
         setattr(post, field, value)
-    if media_payload is not None:
-        post.media = [PortfolioMedia(**m) for m in media_payload]
 
     await db.commit()
-    await db.refresh(post, attribute_names=["media", "updated_at"])
+    await db.refresh(post, attribute_names=["updated_at"])
     return post
 
 

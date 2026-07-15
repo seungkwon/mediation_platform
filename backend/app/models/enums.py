@@ -13,11 +13,6 @@ class PortfolioStatus(str, enum.Enum):
     published = "published"
 
 
-class MediaType(str, enum.Enum):
-    image = "image"
-    video = "video"
-
-
 class ServiceRequestStatus(str, enum.Enum):
     open = "open"
     awarded = "awarded"

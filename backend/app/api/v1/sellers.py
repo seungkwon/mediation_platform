@@ -76,6 +76,31 @@ async def update_my_seller_profile(
     return await _to_out(db, profile)
 
 
+@router.get("", response_model=list[SellerProfileOut])
+async def list_sellers(
+    category_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> list[SellerProfileOut]:
+    query = (
+        select(SellerProfile, func.count(Review.id), func.avg(Review.rating))
+        .options(selectinload(SellerProfile.user))
+        .outerjoin(Review, Review.reviewee_id == SellerProfile.user_id)
+        .group_by(SellerProfile.id)
+        .order_by(SellerProfile.created_at.desc())
+    )
+    if category_id is not None:
+        query = query.where(SellerProfile.category_id == category_id)
+
+    rows = (await db.execute(query)).all()
+    results = []
+    for profile, review_count, average_rating in rows:
+        out = SellerProfileOut.model_validate(profile)
+        out.review_count = review_count or 0
+        out.average_rating = round(float(average_rating), 2) if average_rating is not None else None
+        results.append(out)
+    return results
+
+
 @router.get("/{user_id}", response_model=SellerProfileOut)
 async def get_seller_profile(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> SellerProfileOut:
     result = await db.execute(

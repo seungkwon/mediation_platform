@@ -140,6 +140,21 @@
 - **스코프 결정**: 신고/분쟁 "생성" UI(신고하기 버튼 등)는 이번 화면 구현에서 제외 — 신고 대상이 사용자/포트폴리오/요청/리뷰/채팅메시지 등 여러 화면에 흩어져 있어 각 화면에 신고 버튼을 붙이는 작업은 범위가 커서, 이번엔 관리자 대시보드(조회/처리)만 구현. 백엔드 `POST /reports`, `POST /disputes`는 이미 동작하며 curl로 검증 완료(마일스톤 8)
 - 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 리뷰 작성→목록 반영, 관리자 신고/분쟁 조회·상태변경·비관리자 403 전부 프론트 타입과 정확히 일치 확인 (버그 없음)
 
+**포트폴리오 Rich Text 에디터 전환 + 판매자 탐색 기능 추가**
+- **배경**: 기존 포트폴리오 작성은 `content`(plain textarea) + `PortfolioMedia` 테이블(이미지/동영상을 파일별로 업로드해 본문과 분리된 그리드로 표시)이 분리되어 있어, 글 중간에 사진/영상을 배치할 수 없었음. Tiptap 기반 Rich Text 에디터로 전환해 텍스트 작성 중 원하는 위치에 이미지/동영상을 바로 삽입하도록 변경
+- **데이터 구조 변경**: `PortfolioMedia` 테이블/모델/스키마 완전 제거, 이미지·동영상도 `content`(HTML) 안에 커스텀 노드로 인라인 저장. 이미지/동영상은 절대 URL이 아니라 `data-file-path`(상대 경로)로 저장하고 표시 시점에 `mediaUrl()`로 변환 — 기존 코드베이스의 "상대 경로 저장, 렌더 시 변환" 컨벤션 유지. 목록 API의 썸네일은 `PortfolioMedia`가 없어졌으므로 본문 HTML에서 첫 `<img data-file-path>`를 정규식으로 추출해서 채움
+  - `backend/app/models/seller.py`, `schemas/seller.py`, `api/v1/portfolios.py` 수정, `backend/alembic/versions/45ab23d926d9_drop_portfolio_media.py` 신규(portfolio_media 테이블 drop)
+  - `frontend/src/components/portfolio/{RichTextEditor.tsx,richTextExtensions.ts}` 신규, `MediaUploader.tsx` 삭제, `PortfolioForm.tsx`/`types/seller.ts` 단순화
+- **에디터 기능**: 굵게/기울임/제목/목록/정렬(좌·가운데·우, 이미지·동영상 포함) + 이미지/동영상 삽입(`/uploads/portfolios` 재사용) + 드래그로 이미지/동영상 크기 조절(코너 핸들, `data-width`로 저장) + 표(삽입, 행·열 추가/삭제, 셀 병합/분할, 컬럼 너비 드래그 리사이즈, **선택한 셀 범위 기준**으로 좌/우/상/하/내부 변 지정 후 테두리 색상·두께 적용, 셀 배경색). 테두리 두께 0(없음)은 읽기 모드에서는 안 보이고 편집 모드에서만 빨간 점선 가이드로 표시. 에디터 툴바는 `sticky`로 항상 화면에 보이도록 처리
+  - Tiptap의 내장 resizable 테이블 NodeView가 커스텀 속성 변경을 안정적으로 반영하지 않는 문제가 있어, 셀 단위 테두리/배경은 기본 스키마 렌더링(반응성 보장)을 쓰는 `TableCell`/`TableHeader` 확장으로, 표 자체가 아니라 `selectedRect()`(`@tiptap/pm/tables`)로 계산한 선택 셀 범위에 직접 트랜잭션을 적용하는 방식으로 구현(`applyCellBorders`/`applyCellBackground`, `richTextExtensions.ts`)
+  - 셀 드래그 선택이 "안 되는 것처럼" 보였던 원인은 실제로는 선택이 되고 있었으나 `.selectedCell` 하이라이트 CSS가 없었던 것 — `index.css`에 추가
+- **판매자 탐색 기능 신규**: 기존엔 판매자 목록/검색 페이지가 전혀 없고 `/sellers/:id`(단건 조회)만 존재해 구매자가 판매자를 발견할 방법이 없었음 (헤더 메뉴의 "판매자 프로필"은 로그인한 "본인" 프로필로만 연결)
+  - 백엔드: `GET /sellers`(목록, `category_id` 선택 필터, 리뷰 집계 포함) 신규 추가 (`backend/app/api/v1/sellers.py`)
+  - 프론트: `frontend/src/routes/SellersList.tsx`(`/sellers`) 신규, `Header.tsx`에 "판매자 찾기" 메뉴 추가
+  - 구매자가 서비스 신청 여부와 무관하게 포트폴리오 전문을 읽을 수 있도록 `frontend/src/routes/PortfolioDetail.tsx`(`/portfolios/:id`, 읽기 전용) 신규 — 백엔드 `GET /portfolios/{id}`는 이미 게시물 상태만 확인하고 공개로 내려주고 있어 백엔드 변경 불필요, `RichTextEditor`에 `readOnly` 모드를 추가해 재사용. `SellerProfilePage.tsx`의 포트폴리오 카드도 비소유자 클릭 시 이 페이지로 연결되도록 수정(기존엔 클릭해도 반응 없었음)
+  - 포트폴리오 목록 카드 썸네일이 `object-cover`로 잘려 보이던 것을 `object-contain`(+회색 레터박스)으로 변경해 이미지 전체가 보이도록 수정
+- 검증: `npm run build`(tsc)/`npm run lint`(oxlint) 통과, `alembic upgrade head` 적용 확인, 로컬 dev 서버(백엔드 8001 `--reload`, 프론트 5174) 기동 후 신규/변경 모듈이 HMR로 에러 없이 반영되는 것과 `GET /sellers`, `GET /portfolios/{id}` 응답을 curl로 확인 — 이 환경엔 브라우저 자동화 도구가 없어 실제 드래그 리사이즈/셀 병합/테두리 적용 등 마우스 상호작용은 사용자가 직접 브라우저에서 확인함
+
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
 

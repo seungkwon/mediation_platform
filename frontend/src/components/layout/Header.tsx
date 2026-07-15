@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 
 const baseNavItems = [
+  { to: '/sellers', label: '판매자 찾기' },
   { to: '/requests', label: '서비스 요청' },
   { to: '/chat', label: '채팅' },
   { to: '/my/requests', label: '내 요청' },

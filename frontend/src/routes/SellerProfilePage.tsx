@@ -123,7 +123,11 @@ export default function SellerProfilePage() {
             const card = (
               <>
                 {post.thumbnail ? (
-                  <img src={mediaUrl(post.thumbnail)} alt="" className="aspect-video w-full object-cover" />
+                  <img
+                    src={mediaUrl(post.thumbnail)}
+                    alt=""
+                    className="aspect-video w-full bg-neutral-100 object-contain dark:bg-neutral-800"
+                  />
                 ) : (
                   <div className="flex aspect-video w-full items-center justify-center bg-neutral-100 text-neutral-400 dark:bg-neutral-800">
                     이미지 없음
@@ -135,18 +139,14 @@ export default function SellerProfilePage() {
                 </div>
               </>
             )
-            return isOwner ? (
+            return (
               <Link
                 key={post.id}
-                to={`/portfolios/${post.id}/edit`}
+                to={isOwner ? `/portfolios/${post.id}/edit` : `/portfolios/${post.id}`}
                 className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
               >
                 {card}
               </Link>
-            ) : (
-              <div key={post.id} className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800">
-                {card}
-              </div>
             )
           })}
         </div>

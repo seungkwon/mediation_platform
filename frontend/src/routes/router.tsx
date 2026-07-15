@@ -15,12 +15,14 @@ import MyRequests from './MyRequests'
 import MyReviews from './MyReviews'
 import NotFound from './NotFound'
 import OAuthCallback from './OAuthCallback'
+import PortfolioDetail from './PortfolioDetail'
 import PortfolioEdit from './PortfolioEdit'
 import PortfolioNew from './PortfolioNew'
 import RequestDetail from './RequestDetail'
 import RequestNew from './RequestNew'
 import RequestsList from './RequestsList'
 import SellerProfilePage from './SellerProfilePage'
+import SellersList from './SellersList'
 import Signup from './Signup'
 
 export const router = createBrowserRouter([
@@ -32,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'oauth/callback/:provider', element: <OAuthCallback /> },
+      { path: 'sellers', element: <SellersList /> },
       { path: 'sellers/:id', element: <SellerProfilePage /> },
       {
         path: 'portfolios/new',
@@ -49,6 +52,7 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
+      { path: 'portfolios/:id', element: <PortfolioDetail /> },
       { path: 'requests', element: <RequestsList /> },
       {
         path: 'requests/new',

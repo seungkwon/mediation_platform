@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import MediaType, PortfolioStatus
+from app.models.enums import PortfolioStatus
 from app.schemas.common import ORMBase
 from app.schemas.user import UserPublic
 
@@ -31,31 +31,16 @@ class SellerProfileOut(ORMBase):
     created_at: datetime
 
 
-class PortfolioMediaOut(ORMBase):
-    id: uuid.UUID
-    media_type: MediaType
-    file_path: str
-    sort_order: int
-
-
-class PortfolioMediaCreate(BaseModel):
-    media_type: MediaType
-    file_path: str
-    sort_order: int = 0
-
-
 class PortfolioPostCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     content: str
     status: PortfolioStatus = PortfolioStatus.draft
-    media: list[PortfolioMediaCreate] = []
 
 
 class PortfolioPostUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     content: str | None = None
     status: PortfolioStatus | None = None
-    media: list[PortfolioMediaCreate] | None = None
 
 
 class PortfolioPostOut(ORMBase):
@@ -64,7 +49,6 @@ class PortfolioPostOut(ORMBase):
     title: str
     content: str
     status: PortfolioStatus
-    media: list[PortfolioMediaOut] = []
     created_at: datetime
     updated_at: datetime
 
