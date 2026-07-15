@@ -23,7 +23,9 @@ class ServiceRequest(UUIDPKMixin, TimestampMixin, Base):
     bid_deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[ServiceRequestStatus] = mapped_column(String(20), default=ServiceRequestStatus.open)
     selected_quote_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("quotes.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("quotes.id", ondelete="SET NULL", use_alter=True, name="fk_service_requests_selected_quote_id"),
+        nullable=True,
     )
 
     images: Mapped[list["ServiceRequestImage"]] = relationship(
