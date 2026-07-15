@@ -121,7 +121,7 @@ async def update_portfolio(
         post.media = [PortfolioMedia(**m) for m in media_payload]
 
     await db.commit()
-    await db.refresh(post, attribute_names=["media"])
+    await db.refresh(post, attribute_names=["media", "updated_at"])
     return post
 
 

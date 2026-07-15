@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 
 import { useAuthStore } from '@/store/authStore'
 
-const navItems = [
+const baseNavItems = [
   { to: '/requests', label: '서비스 요청' },
   { to: '/chat', label: '채팅' },
   { to: '/my/requests', label: '내 요청' },
@@ -22,6 +22,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const navItems = user ? [...baseNavItems, { to: `/sellers/${user.id}`, label: '판매자 프로필' }] : baseNavItems
 
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90">

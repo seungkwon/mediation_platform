@@ -103,7 +103,15 @@
 - `Signup.tsx`: 이름/이메일/비밀번호(8자 이상)/전화번호(선택) 검증, 가입 즉시 로그인 처리(백엔드가 가입 시 토큰도 함께 발급)
 - 소셜 로그인 버튼은 아직 미구현 — 백엔드가 Provider 앱 미등록으로 501을 반환하는 상태라 실제 동작 가능한 UI를 만들 수 없어 보류 (알려진 이슈 참고)
 - 검증: `npm run build`/`npm run lint` 통과, `npm run dev`로 신규 모듈 200 서빙 확인, curl로 프론트 origin에서 회원가입(201)→중복가입(409)→오답 로그인(401)→정상 로그인(200) 응답 바디가 프론트 TS 타입(`TokenResponse`/`UserMe`) 및 `extractErrorMessage`가 기대하는 `{detail}` 형태와 정확히 일치하는지 확인
-- 남은 화면: 판매자/포트폴리오, 서비스요청/견적(역경매 핵심 플로우), 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
+
+**판매자/포트폴리오 화면 추가 완료**
+- `src/api/{sellers,portfolios,uploads}.ts`, `src/hooks/{useSellerProfile,usePortfolios}.ts`, `src/lib/media.ts`(정적 파일은 `/api/v1` 없는 origin의 `/static/...`이라 API base URL에서 접미사를 벗겨내는 헬퍼)
+- `SellerProfilePage.tsx`(`/sellers/:id`): 프로필 없고 본인이면 등록 폼, 있으면 조회 화면(본인이면 "프로필 수정" 토글로 같은 폼 재사용) + 포트폴리오 그리드(본인만 초안 포함 전체 노출, 클릭 시 수정 페이지로 이동은 소유자만 — 방문자용 상세 열람 라우트는 DetailedPlan에 없어 미구현)
+- `SellerProfileForm.tsx`(등록/수정 공용), `PortfolioForm.tsx` + `MediaUploader.tsx`(파일 선택 → `/uploads/portfolios` 즉시 업로드 → `file_path`를 폼 상태에 누적, 확장자로 image/video 자동 판별)
+- `PortfolioNew.tsx`/`PortfolioEdit.tsx`(수정 화면에 삭제 버튼 포함), Header에 로그인 시 "판매자 프로필" 내비게이션 링크 추가
+- **버그 발견 및 수정**: `PATCH /portfolios/{id}`가 500 에러 발생 — `db.refresh(post, attribute_names=["media"])`가 `updated_at`(서버 계산 `onupdate` 컬럼)을 갱신 목록에서 빠뜨려 응답 직렬화 시점에 만료된 속성을 동기적으로 지연로드하려다 `MissingGreenlet` 에러 발생 (`backend/app/api/v1/portfolios.py`) → `attribute_names=["media", "updated_at"]`로 수정, 수정 전/후 curl로 500→200 확인. (`create_portfolio`의 동일 패턴은 INSERT라 RETURNING으로 이미 채워져 있어 문제없음을 확인)
+- 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 실제 화면이 수행할 전체 시퀀스를 재현 — 기존 판매자 프로필 조회, 이미지 업로드(`/uploads/portfolios`) → 포트폴리오 생성(미디어 포함) → 목록에 썸네일 반영 → 정적 파일 서빙(`/static/...`) 200 확인 → 수정(버그 발견/수정) → 비소유자 403 → 삭제(204) → 신규 유저 판매자 프로필 미존재(404) → 등록(201) → 재조회(200) 전 과정이 프론트 TS 타입과 정확히 일치
+- 남은 화면: 서비스요청/견적(역경매 핵심 플로우), 채팅(WebSocket), 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
 
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
