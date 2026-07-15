@@ -95,7 +95,7 @@
 - 검증: `npm run build`/`npm run lint` 통과, `npm run dev`로 기동 후 Vite가 변환한 각 신규 모듈(`main.tsx`, `router.tsx`, `client.ts`, `authStore.ts`, `Home.tsx`, `Header.tsx`, `RequireAuth.tsx`)이 200으로 정상 서빙되는지, 백엔드 `/categories`가 프론트 origin으로부터 CORS 헤더와 함께 정상 응답하는지 curl로 확인
 - **주의**: 이 환경에는 브라우저 자동화 도구가 없어 실제 브라우저 렌더링(라우팅 전환, 폼 상호작용, 반응형 레이아웃 육안 확인)은 수행하지 못했음 — 다음 세션에서 사람이 직접 `npm run dev`로 브라우저 확인 권장
 
-### 11. 프론트엔드 화면 (진행 중 — 인증 화면 완료)
+### 11. 프론트엔드 화면 (완료)
 - `src/api/auth.ts`(signup/login 호출), `src/hooks/{useLogin,useSignup}.ts`(React Query mutation, 성공 시 `authStore.setAuth`로 토큰/유저 저장)
 - `src/components/common/TextField.tsx`: react-hook-form `register()`와 바로 스프레드 가능한 공용 input 컴포넌트 (label+error 메시지 포함, React 19라 `forwardRef` 불필요)
 - `src/lib/errors.ts`: axios 에러에서 백엔드 `{detail: string}` 메시지를 추출하는 헬퍼
@@ -131,6 +131,14 @@
 - `ChatRoomPage.tsx`(`/chat/:roomId`): REST로 이력 로드 후 WS로 실시간 수신 메시지를 별도 상태에 추가해 병합, 서버가 발신자 본인에게도 echo를 보내는 구조(마일스톤 6)에 맞춰 낙관적 업데이트 없이 echo만으로 자기 메시지 렌더링(id 기준 중복 방지), 말풍선 좌우 정렬로 내 메시지/상대 메시지 구분
 - 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, 기존 `tests/manual_ws_test.py`(milestone 6에서 작성된 WS 클라이언트 스크립트)를 재사용해 REST(`/chat/rooms`, `/chat/rooms/{id}/messages`)와 WS 메시지 교환을 함께 검증 — 응답/수신 페이로드가 프론트 `ChatMessage`/`ChatRoom` 타입과 정확히 일치, 메시지 전송 후 방 목록의 `last_message`/`last_message_at`도 갱신됨을 확인. 이번엔 백엔드 버그 없이 통과
 - 남은 화면: 리뷰, 관리자(신고/분쟁) — 다음 세션에서 이어서 진행
+
+**리뷰 / 관리자(신고·분쟁) 화면 추가 완료 — 마일스톤 11 전체 완료**
+- `src/types/{review,admin}.ts`, `src/api/{reviews,admin}.ts`, `src/hooks/{useReviews,useAdmin}.ts`
+- `MyReviews.tsx`(`/my/reviews`): 내 낙찰 완료 요청 중 아직 리뷰를 안 쓴 것도 서버에 물어보지 않고 일단 모두 노출 → 작성 시도 시 중복이면 백엔드 409를 `extractErrorMessage`로 그대로 노출(별도 "이미 작성함" 사전 조회 없이 재사용), 내가 받은 리뷰 목록(별점 `★` 반복 렌더링) 함께 표시
+- `AdminReports.tsx`/`AdminDisputes.tsx`(`/admin/reports`, `/admin/disputes`): 상태 필터 + 카드별 처리 메모 입력 후 상태 전이 버튼(신고: pending/reviewing/resolved/rejected, 분쟁: open/in_review/resolved), 비관리자 403은 "관리자 권한이 필요합니다" 안내로 처리 — 관리자 임명은 마일스톤 8과 동일하게 DB 직접 조작 필요
+- `StatusBadge`에 report/dispute 상태 라벨·색상 추가(pending/reviewing/resolved/in_review) — `open`은 서비스요청과 의미가 겹치지만 라벨("진행중")이 분쟁에도 무난히 맞아 재사용
+- **스코프 결정**: 신고/분쟁 "생성" UI(신고하기 버튼 등)는 이번 화면 구현에서 제외 — 신고 대상이 사용자/포트폴리오/요청/리뷰/채팅메시지 등 여러 화면에 흩어져 있어 각 화면에 신고 버튼을 붙이는 작업은 범위가 커서, 이번엔 관리자 대시보드(조회/처리)만 구현. 백엔드 `POST /reports`, `POST /disputes`는 이미 동작하며 curl로 검증 완료(마일스톤 8)
+- 검증: `npm run build`/`npm run lint` 통과, 신규 모듈 전체 200 서빙 확인, curl로 리뷰 작성→목록 반영, 관리자 신고/분쟁 조회·상태변경·비관리자 403 전부 프론트 타입과 정확히 일치 확인 (버그 없음)
 
 ## 남은 마일스톤 (미착수)
 12. 백엔드+프론트 동시 기동 후 브라우저로 골든 패스 e2e 확인
