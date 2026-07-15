@@ -89,7 +89,7 @@ docker compose down -v
 
 | 이메일 | 이름 | 비고 |
 |---|---|---|
-| `buyer1@test.com` | Buyer One | 구매자 역할 테스트용, **관리자 권한 있음** (`/admin/reports`, `/admin/disputes` 접근 가능) |
+| `buyer1@test.com` | Buyer One | 구매자 역할 테스트용, **super_admin 권한 있음** (`/admin/reports`, `/admin/disputes` 접근 및 공지사항/FAQ/자료실 등록·수정·삭제, QnA 답변 작성 가능) |
 | `seller1@test.com` | Seller One | 판매자 프로필 등록됨, 리뷰 2건 보유 (평점 집계 확인용) |
 | `newseller@test.com` | New Seller | 판매자 프로필 있음 (최소 정보만 입력된 상태) |
 | `frontend_test@test.com` | Frontend Tester | 판매자 프로필 없는 일반 계정 |

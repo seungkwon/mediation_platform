@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { TextField } from '@/components/common/TextField'
 import { useSignup } from '@/hooks/useSignup'
 import { extractErrorMessage } from '@/lib/errors'
@@ -73,6 +74,8 @@ export default function Signup() {
           {signup.isPending ? '가입 중...' : '회원가입'}
         </button>
       </form>
+
+      <SocialLoginButtons />
 
       <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
         이미 계정이 있으신가요?{' '}

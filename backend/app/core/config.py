@@ -13,28 +13,28 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
 
-    frontend_origin: str = "http://localhost:5173"
+    frontend_origin: str = "http://localhost:5174"
 
     upload_dir: str = "uploads"
     max_image_size_mb: int = 10
     max_video_size_mb: int = 100
     max_resource_size_mb: int = 500
 
+    # redirect_uri는 프론트가 매 요청마다 계산해 백엔드로 함께 보내므로 여기서는 보관하지 않는다.
+    # 각 Provider 콘솔에 등록할 값은 .env.example의 안내 주석을 참고.
     naver_client_id: str = ""
     naver_client_secret: str = ""
-    naver_redirect_uri: str = ""
 
     kakao_client_id: str = ""
     kakao_client_secret: str = ""
-    kakao_redirect_uri: str = ""
 
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_redirect_uri: str = ""
 
     apple_client_id: str = ""
-    apple_client_secret: str = ""
-    apple_redirect_uri: str = ""
+    apple_team_id: str = ""
+    apple_key_id: str = ""
+    apple_private_key_path: str = ""
 
 
 @lru_cache

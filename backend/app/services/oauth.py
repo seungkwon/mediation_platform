@@ -6,6 +6,7 @@
 
 import httpx
 
+from app.core.apple_auth import generate_apple_client_secret
 from app.core.config import settings
 from app.models.enums import SocialProvider
 
@@ -30,16 +31,14 @@ class OAuthProfile:
         self.name = name
 
 
-def _client_credentials(provider: SocialProvider) -> tuple[str, str, str]:
+def _client_credentials(provider: SocialProvider) -> tuple[str, str]:
+    if provider == SocialProvider.apple:
+        return settings.apple_client_id, generate_apple_client_secret()
+
     mapping = {
-        SocialProvider.naver: (settings.naver_client_id, settings.naver_client_secret, settings.naver_redirect_uri),
-        SocialProvider.kakao: (settings.kakao_client_id, settings.kakao_client_secret, settings.kakao_redirect_uri),
-        SocialProvider.google: (
-            settings.google_client_id,
-            settings.google_client_secret,
-            settings.google_redirect_uri,
-        ),
-        SocialProvider.apple: (settings.apple_client_id, settings.apple_client_secret, settings.apple_redirect_uri),
+        SocialProvider.naver: (settings.naver_client_id, settings.naver_client_secret),
+        SocialProvider.kakao: (settings.kakao_client_id, settings.kakao_client_secret),
+        SocialProvider.google: (settings.google_client_id, settings.google_client_secret),
     }
     return mapping[provider]
 
@@ -47,7 +46,7 @@ def _client_credentials(provider: SocialProvider) -> tuple[str, str, str]:
 async def exchange_code_and_fetch_profile(
     provider: SocialProvider, code: str, redirect_uri: str
 ) -> OAuthProfile:
-    client_id, client_secret, _default_redirect = _client_credentials(provider)
+    client_id, client_secret = _client_credentials(provider)
     if not client_id or not client_secret:
         raise ValueError(f"{provider.value} OAuth 클라이언트 설정이 없습니다. 백엔드 .env를 확인하세요.")
 
@@ -73,7 +72,9 @@ async def exchange_code_and_fetch_profile(
 
             claims = jose_jwt.get_unverified_claims(token_data["id_token"])
             return OAuthProfile(
-                provider_user_id=claims["sub"], email=claims.get("email"), name=claims.get("email", "Apple User")
+                provider_user_id=claims["sub"],
+                email=claims.get("email"),
+                name=claims.get("name") or claims.get("email") or "Apple User",
             )
 
         userinfo_resp = await client.get(

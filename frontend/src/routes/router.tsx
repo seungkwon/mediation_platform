@@ -23,6 +23,8 @@ import NoticeList from './NoticeList'
 import NoticeNew from './NoticeNew'
 import NotFound from './NotFound'
 import OAuthCallback from './OAuthCallback'
+import OAuthCompleteSignup from './OAuthCompleteSignup'
+import OAuthLinkConfirm from './OAuthLinkConfirm'
 import PortfolioDetail from './PortfolioDetail'
 import PortfolioEdit from './PortfolioEdit'
 import PortfolioNew from './PortfolioNew'
@@ -50,6 +52,8 @@ export const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
       { path: 'oauth/callback/:provider', element: <OAuthCallback /> },
+      { path: 'oauth/link', element: <OAuthLinkConfirm /> },
+      { path: 'oauth/complete-signup', element: <OAuthCompleteSignup /> },
       { path: 'sellers', element: <SellersList /> },
       { path: 'sellers/:id', element: <SellerProfilePage /> },
       {

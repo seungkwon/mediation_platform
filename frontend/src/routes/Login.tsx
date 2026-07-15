@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { TextField } from '@/components/common/TextField'
 import { useLogin } from '@/hooks/useLogin'
 import { extractErrorMessage } from '@/lib/errors'
@@ -65,6 +66,8 @@ export default function Login() {
           {login.isPending ? '로그인 중...' : '로그인'}
         </button>
       </form>
+
+      <SocialLoginButtons />
 
       <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
         계정이 없으신가요?{' '}

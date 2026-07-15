@@ -13,6 +13,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class TokenType(str, Enum):
     access = "access"
     refresh = "refresh"
+    oauth_signup = "oauth_signup"
+    oauth_link = "oauth_link"
 
 
 def hash_password(password: str) -> str:
@@ -44,6 +46,17 @@ def create_refresh_token(user_id: uuid.UUID) -> str:
     return _create_token(
         user_id, TokenType.refresh, timedelta(days=settings.refresh_token_expire_days)
     )
+
+
+def create_oauth_token(claims: dict, token_type: TokenType, expires_minutes: int) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        **claims,
+        "type": token_type.value,
+        "iat": now,
+        "exp": now + timedelta(minutes=expires_minutes),
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def decode_token(token: str) -> dict:

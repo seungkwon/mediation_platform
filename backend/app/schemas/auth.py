@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field
 
 from app.models.enums import SocialProvider
@@ -37,3 +39,30 @@ class OAuthCallbackRequest(BaseModel):
     provider: SocialProvider
     code: str
     redirect_uri: str
+
+
+class OAuthCallbackResult(ORMBase):
+    status: Literal["issued", "link_required", "signup_required"]
+    # status == "issued"
+    access_token: str | None = None
+    refresh_token: str | None = None
+    token_type: str = "bearer"
+    user: UserMe | None = None
+    # status == "link_required"
+    link_token: str | None = None
+    masked_email: str | None = None
+    # status == "signup_required" (link_required도 provider를 함께 내려줌)
+    signup_token: str | None = None
+    provider: SocialProvider | None = None
+
+
+class OAuthLinkConfirmRequest(BaseModel):
+    link_token: str
+    password: str
+
+
+class OAuthCompleteSignupRequest(BaseModel):
+    signup_token: str
+    email: EmailStr
+    name: str = Field(min_length=1, max_length=100)
+    phone: str | None = None

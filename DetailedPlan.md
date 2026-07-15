@@ -245,6 +245,42 @@
 
 **admin_users**: user_id FK, role enum(super_admin, moderator)
 
+### 4.7 게시판 (공지사항/질문답변/FAQ/자료실)
+
+4개 게시판은 서로 관계가 없고 의미가 달라 각각 독립 테이블로 둔다 (하나의 폴리모픽 테이블로 합치지 않음).
+
+**notices** / **faq_posts** (동일 구조 — FAQ는 title=질문, content=답변)
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| id | UUID PK | |
+| author_id | FK → users, ON DELETE CASCADE | |
+| title | varchar(255) | |
+| content | text (Rich Text HTML) | |
+| status | enum(draft, published) | |
+| created_at / updated_at | timestamptz | |
+
+**qna_posts**
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| id | UUID PK | |
+| author_id | FK → users | 질문 작성자 (구매자/판매자 누구나) |
+| title / content | varchar / text | 질문 |
+| status | enum(unanswered, answered) | |
+| answer | text nullable | 관리자가 작성 (질문 1개당 답변 1개, 재작성 시 덮어쓰기) |
+| answered_at | timestamptz nullable | |
+| created_at / updated_at | timestamptz | |
+
+**resource_posts**
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| id | UUID PK | |
+| author_id | FK → users (관리자) | |
+| title / content | varchar / text | |
+| status | enum(draft, published) | |
+| created_at / updated_at | timestamptz | |
+
+**resource_attachments**: resource_post_id FK(CASCADE), file_path, original_filename, size(int), sort_order(int) — `QuoteAttachment`/`ServiceRequestAttachment`와 동일한 1:N 첨부 패턴, 파일당 최대 500MB(`MAX_RESOURCE_SIZE_MB`)
+
 **notifications**
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
@@ -267,6 +303,7 @@
   - 이메일이 없는 Provider(카카오 등 동의 항목 미제공 시) 대응: 임시 이메일 발급 또는 최초 로그인 시 이메일 입력 유도
 - **토큰**: JWT Access Token(단기, 30분) + Refresh Token(장기, 14일, httpOnly 쿠키 저장)
 - **인가**: 요청 소유자/판매자 여부는 API 레벨에서 검증 (예: 견적 오픈/선택은 해당 요청의 buyer만 가능), 관리자 API는 `admin_users` 확인 dependency로 분리
+- **관리자 여부 노출**: `is_admin(db, user)` 헬퍼(`app/api/deps.py`)를 `get_current_admin`과 `GET /auth/me`(`UserMe.is_admin`) 양쪽에서 공유. 프론트는 로그인 시 받은 `UserMe.is_admin`으로 관리자 전용 UI(게시판 작성/수정/삭제, QnA 답변 등)를 노출 — 백엔드도 각 엔드포인트에서 동일 검증을 이중으로 수행
 
 ---
 
@@ -316,6 +353,10 @@ open ──(구매자가 취소)──▶ cancelled
 | 채팅 | `GET /chat/rooms`, `GET /chat/rooms/{id}/messages`, `WS /ws/chat/{room_id}` |
 | 리뷰 | `POST /reviews`, `GET /users/{id}/reviews` |
 | 신고/분쟁 | `POST /reports`, `POST /disputes`, `GET /admin/reports`, `PATCH /admin/reports/{id}` |
+| 공지사항 | `POST/GET/GET·id/PATCH/DELETE /notices` (작성/수정/삭제는 관리자 전용) |
+| 질문답변(QnA) | `POST/GET/GET·id/PATCH/DELETE /qna` (작성은 누구나·수정/삭제는 본인 또는 관리자), `PATCH /qna/{id}/answer` (관리자 전용) |
+| FAQ | `POST/GET/GET·id/PATCH/DELETE /faq` (관리자 전용) |
+| 자료실 | `POST/GET/GET·id/PATCH/DELETE /resources` (관리자 전용, 첨부파일 다수 포함) |
 | 업로드 | `POST /uploads` (범용 파일 업로드, 카테고리별 저장 경로 분리) |
 | 알림 | `GET /notifications`, `PATCH /notifications/{id}/read` |
 
@@ -327,8 +368,12 @@ open ──(구매자가 취소)──▶ cancelled
 ```
 /                       홈 (카테고리별 판매자·포트폴리오 노출, 최근 요청)
 /login, /signup
-/oauth/callback/:provider
+/oauth/callback/:provider   Provider 인가 완료 후 code 수신 → 백엔드 콜백 호출
+/oauth/link                  소셜 이메일이 기존 비밀번호 계정과 겹칠 때 비밀번호 확인 후 연결
+/oauth/complete-signup        Provider가 이메일을 안 줬을 때 가입 완료(이메일 입력) 화면
+/sellers                로그인 사용자가 판매자 목록을 열람 (구매자용 탐색 진입점)
 /sellers/:id            판매자 프로필 + 포트폴리오 리스트
+/portfolios/:id          포트폴리오 읽기 전용 상세 (비소유자도 열람)
 /portfolios/new, /portfolios/:id/edit
 /requests                서비스 요청(역경매) 목록
 /requests/new
@@ -338,8 +383,14 @@ open ──(구매자가 취소)──▶ cancelled
 /chat                       채팅방 목록
 /chat/:roomId
 /my/reviews
+/notices, /notices/new, /notices/:id, /notices/:id/edit         공지사항 (작성/수정은 관리자만 진입 가능)
+/qna, /qna/new, /qna/:id, /qna/:id/edit                          질문답변 (작성은 누구나, 수정은 본인 글만, 답변 작성은 관리자만)
+/faq, /faq/new, /faq/:id, /faq/:id/edit                          FAQ (관리자 전용)
+/resources, /resources/new, /resources/:id, /resources/:id/edit  자료실 (관리자 전용, 첨부파일 다수)
 /admin, /admin/reports, /admin/disputes
 ```
+
+- 위 게시판 4종 라우트는 전부 `RequireAuth`로 감싸 **로그인한 사용자만 열람 가능** (비로그인 상태에선 헤더에도 메뉴 노출 안 됨)
 
 ### 8.2 디자인 시스템
 - 폰트: Pretendard (font-family 전역 적용)
@@ -442,10 +493,84 @@ mediation_platform/
 | 5. 리뷰/평점 | 리뷰 작성/집계, 프로필 노출 |
 | 6. 관리자 | 신고/분쟁 대시보드, 처리 플로우 |
 | 7. 마감 & 반응형 정리 | 전 화면 반응형 QA, 알림 UX, 에러 처리 |
+| 8. 게시판 4종 | 공지사항/QnA/FAQ/자료실 CRUD + 공용 Rich Text 에디터 |
+| 9. 소셜 로그인 | 네이버/카카오/구글/애플 회원가입·로그인 |
 
 ---
 
-## 13. 향후 확장 고려사항 (이번 범위 제외)
+## 13. 게시판 4종 (공지사항 / 질문답변 / FAQ / 자료실)
+
+### 13.1 배경
+판매자 포트폴리오용으로 구축한 Tiptap 기반 Rich Text 에디터(이미지·동영상 인라인 삽입/리사이즈/정렬, 표 삽입, 셀 병합·분할, 선택한 셀 범위 단위의 테두리·배경색 편집)를 `components/portfolio/` 전용에서 `components/richtext/`로 일반화해 재사용한다. Tiptap 노드 이름을 `portfolioImage/portfolioVideo` → `richImage/richVideo`로 바꿨지만 저장되는 HTML에는 노드 이름이 남지 않고 `data-file-path` 속성만 남으므로 기존 포트폴리오 데이터와 100% 호환된다.
+
+### 13.2 권한 매트릭스
+| 게시판 | 작성 | 수정/삭제 | 답변 | 열람 |
+|---|---|---|---|---|
+| 공지사항 | 관리자만 | 관리자만 | - | 로그인 사용자 (관리자가 아니면 published만) |
+| 질문답변(QnA) | 로그인 사용자 누구나 | 작성자 본인 (제목/내용만, 답변 불가) | 관리자만 (질문 1개당 답변 1개, 재작성 시 덮어쓰기) | 로그인 사용자 전체 |
+| FAQ | 관리자만 | 관리자만 | - | 로그인 사용자 (관리자가 아니면 published만) |
+| 자료실 | 관리자만 | 관리자만 | - | 로그인 사용자 (관리자가 아니면 published만) |
+
+공지/FAQ/자료실은 구조가 거의 동일해 보이지만 의미가 다르고 독립적으로 진화할 수 있어 폴리모픽 테이블로 합치지 않고 각각 별도 모델/스키마/라우터(`models/{notice,faq,resource}.py` 등)로 둔다. DB 설계는 4.7절 참고.
+
+### 13.3 업로드 카테고리 확장
+`POST /uploads`의 `category`에 `notices/qna/faq/resources`를 추가. 자료실만 `MAX_RESOURCE_SIZE_MB=500`(파일당 최대 500MB)을 별도 적용하고, 그 외 카테고리는 기존 이미지/동영상 용량 한도를 그대로 따른다. `DOCUMENT_EXTENSIONS`에 `.ppt/.pptx/.txt/.csv/.rar`를 추가해 자료실 첨부파일을 지원한다.
+
+### 13.4 자료실 첨부파일
+`ResourcePost`에 `ResourceAttachment`가 1:N(`QuoteAttachment`/`ServiceRequestAttachment`와 동일 패턴)로 붙는다. 본문(Rich Text)과 첨부파일은 분리 — 첨부파일은 다운로드용 원본 파일이고, 본문 삽입 이미지/동영상은 별개로 Rich Text 안에 인라인된다. 수정 시 첨부파일 목록은 통째로 교체(과거 `PortfolioMedia` 처리 방식과 동일).
+
+---
+
+## 14. 소셜 로그인 상세 설계 (네이버 / 카카오 / 구글 / 애플)
+
+### 14.1 배경 및 제약
+자체 로그인 외 4개 Provider의 회원가입/로그인을 Authorization Code Grant로 지원한다. 기존 뼈대(`social_accounts` 테이블, `SocialProvider` enum, `services/oauth.py`의 code→profile 교환)는 이미 있었지만 다음이 미비했다:
+- 프론트에 소셜 버튼/콜백 처리가 전혀 없었음
+- 이메일이 같으면 검증 없이 기존 계정에 자동 연결 → 이메일 스푸핑으로 타 계정을 탈취할 수 있는 보안 허점
+- 카카오/애플처럼 이메일 동의가 없을 수 있는 Provider에서 이메일 없이 임시 이메일(`{provider}_{id}@social.local`)로 조용히 가입되던 문제
+- 애플의 `client_secret`은 정적 문자열이 아니라 팀ID/키ID/개인키로 서명한 ES256 JWT(만료 ≤6개월)여야 함
+- 애플은 `name`/`email` 스코프 요청 시 `response_mode=form_post`를 강제 — SPA가 POST 바디를 직접 읽을 수 없어 브릿지가 필요
+
+### 14.2 콜백 처리 결정 트리
+`POST /auth/{provider}/callback`은 무조건 로그인시키지 않고, 아래 트리에 따라 `issued`/`link_required`/`signup_required` 중 하나를 반환한다.
+
+```
+provider profile 획득 (provider_user_id, email?, name)
+ └─ social_accounts에 (provider, provider_user_id) 존재?
+     ├─ 예 → 그 user로 즉시 로그인 (issued)
+     └─ 아니오 (새 소셜 아이덴티티)
+         └─ email 있음?
+             ├─ 아니오 → signup_required (signup_token 발급, User 아직 생성 안 함)
+             └─ 예 → 같은 email의 User 존재?
+                 ├─ 아니오 → User+SocialAccount 즉시 생성 후 로그인 (issued)
+                 └─ 예 → 그 User가 password_hash 보유?
+                     ├─ 예 → link_required (link_token 발급, 비밀번호 확인 필요)
+                     └─ 아니오(다른 소셜로만 만들어진 계정) → 보호할 자격증명이 없으므로
+                        SocialAccount만 추가하고 즉시 로그인 (issued)
+```
+
+`signup_token`/`link_token`은 DB에 저장하지 않고 짧게 만료되는(10분/5분) 서명 JWT로 상태를 담아 stateless로 처리한다 (`TokenType.oauth_signup`/`oauth_link`, `create_oauth_token()`).
+
+### 14.3 애플 client_secret 동적 생성
+`app/core/apple_auth.py`의 `generate_apple_client_secret()`이 `APPLE_TEAM_ID`/`APPLE_KEY_ID`/`APPLE_PRIVATE_KEY_PATH`로 `.p8` 개인키를 읽어 매 호출마다 짧은 만료(수 분)의 ES256 JWT를 새로 서명한다(`python-jose[cryptography]`, 이미 의존성에 있음). 설정값이 비어 있으면 다른 Provider와 동일하게 `ValueError`→501로 응답해 "미설정 시 안전하게 막힘" 원칙을 유지한다.
+
+### 14.4 애플 form_post 브릿지
+애플 로그인은 `redirect_uri`를 프론트가 아니라 백엔드로 등록한다: `POST /auth/apple/form-callback`이 애플이 폼 POST로 보낸 `code`/`state`를 받아 `f"{frontend_origin}/oauth/callback/apple?code=...&state=..."`로 302 리다이렉트해, 이후로는 나머지 3개 Provider와 동일한 GET 기반 SPA 콜백 흐름을 그대로 탄다.
+
+### 14.5 신규 엔드포인트
+| 엔드포인트 | 설명 |
+|---|---|
+| `POST /auth/{provider}/callback` | code 교환 후 `issued`/`link_required`/`signup_required` 중 하나 반환 (기존 엔드포인트 동작 재설계) |
+| `POST /auth/{provider}/link-confirm` | `link_token`+비밀번호로 기존 계정에 소셜 계정 연결 |
+| `POST /auth/{provider}/complete-signup` | `signup_token`+이메일(+이름/전화)로 신규 가입 완료 (이메일 미제공 Provider용) |
+| `POST /auth/apple/form-callback` | 애플의 `form_post` 콜백을 프론트 SPA 콜백 라우트로 브릿지 |
+
+### 14.6 프론트 화면
+`/oauth/callback/:provider`가 `code`/`state`를 받아 백엔드 콜백을 호출하고 응답에 따라 즉시 로그인(`issued`) / `/oauth/link`(비밀번호 확인) / `/oauth/complete-signup`(이메일 입력)으로 분기한다. `state`는 리다이렉트 전 `sessionStorage`에 저장해두고 콜백에서 대조해 CSRF를 방지한다. Client ID가 `.env`에 아직 비어 있으면 로그인/회원가입 화면의 소셜 버튼은 비활성화 상태로 렌더된다(Provider 콘솔에서 앱 등록 후 값을 채우면 바로 동작).
+
+---
+
+## 15. 향후 확장 고려사항 (이번 범위 제외)
 - PG 연동 결제/에스크로, 수수료 정산
 - 클라우드 오브젝트 스토리지(S3 등) 전환
 - 이메일/푸시 알림 발송 (현재는 인앱 알림 테이블만)
