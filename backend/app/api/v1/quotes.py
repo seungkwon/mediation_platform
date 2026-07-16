@@ -22,6 +22,8 @@ router = APIRouter(tags=["quotes"])
 
 def _mask_if_sealed(quote: Quote, viewer_id: uuid.UUID) -> QuoteOut:
     out = QuoteOut.model_validate(quote)
+    out.service_request_title = quote.service_request.title
+    out.service_request_bid_deadline = quote.service_request.bid_deadline
     is_owner = quote.seller_id == viewer_id
     if quote.status == QuoteStatus.submitted and not is_owner:
         out.price = None
@@ -125,7 +127,7 @@ async def list_quotes_for_request(
     is_buyer = req.buyer_id == user.id
     result = await db.execute(
         select(Quote)
-        .options(selectinload(Quote.seller), selectinload(Quote.attachments))
+        .options(selectinload(Quote.seller), selectinload(Quote.attachments), selectinload(Quote.service_request))
         .where(Quote.service_request_id == request_id)
         .order_by(Quote.created_at)
     )
@@ -144,7 +146,7 @@ async def list_quotes_for_request(
 async def list_my_quotes(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> list[QuoteOut]:
     result = await db.execute(
         select(Quote)
-        .options(selectinload(Quote.seller), selectinload(Quote.attachments))
+        .options(selectinload(Quote.seller), selectinload(Quote.attachments), selectinload(Quote.service_request))
         .where(Quote.seller_id == user.id)
         .order_by(Quote.created_at.desc())
     )

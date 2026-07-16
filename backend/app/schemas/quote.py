@@ -27,6 +27,8 @@ class QuoteOut(ORMBase):
 
     id: uuid.UUID
     service_request_id: uuid.UUID
+    service_request_title: str = ""
+    service_request_bid_deadline: datetime | None = None
     seller: UserPublic
     price: int | None = None
     delivery_days: int | None = None

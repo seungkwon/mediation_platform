@@ -60,6 +60,13 @@ export default function ChatRoomPage() {
         </span>
       </div>
 
+      {room && (
+        <p className="mt-3 rounded-lg bg-neutral-50 px-3 py-2 text-xs text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
+          이 채팅방은 <span className="font-medium">{room.service_request_title}</span> 요청에 판매자가 견적을
+          제출하면서 자동으로 생성되었습니다. 요청 1건당 견적을 제출한 판매자별로 별도의 채팅방이 만들어집니다.
+        </p>
+      )}
+
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-4">
         {messages.map((message) => {
           const isMine = message.sender_id === user?.id

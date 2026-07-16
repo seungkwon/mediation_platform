@@ -23,8 +23,11 @@ export default function MyQuotes() {
           >
             <div className="flex items-center justify-between">
               <StatusBadge status={quote.status} />
-              <span className="text-xs text-neutral-400">{formatDateTime(quote.created_at)}</span>
+              <span className="text-xs text-neutral-400">
+                제출됨 {formatDateTime(quote.created_at)} / 마감 {formatDateTime(quote.service_request_bid_deadline)}
+              </span>
             </div>
+            <p className="font-medium text-neutral-900 dark:text-neutral-50">{quote.service_request_title}</p>
             {quote.price != null && (
               <p className="text-sm text-neutral-700 dark:text-neutral-200">
                 {formatCurrency(quote.price)} · {quote.delivery_days}일

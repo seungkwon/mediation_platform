@@ -19,6 +19,8 @@ export interface QuoteCreateInput {
 export interface Quote {
   id: string
   service_request_id: string
+  service_request_title: string
+  service_request_bid_deadline: string
   seller: UserPublic
   price: number | null
   delivery_days: number | null

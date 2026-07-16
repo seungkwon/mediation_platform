@@ -11,7 +11,13 @@ export default function ChatList() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-12">
-      <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">채팅</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">채팅</h1>
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          판매자가 요청에 견적을 제출하면 채팅방이 자동으로 생성되며, 요청 1건당 견적을 제출한 판매자별로 별도의
+          채팅방이 만들어집니다.
+        </p>
+      </div>
 
       {roomsQuery.data?.length === 0 && <p className="text-neutral-500 dark:text-neutral-400">채팅방이 없습니다.</p>}
 
