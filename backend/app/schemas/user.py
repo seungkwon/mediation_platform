@@ -21,6 +21,7 @@ class UserMe(ORMBase):
     profile_image_path: str | None = None
     is_active: bool
     created_at: datetime
+    last_login_at: datetime | None = None
     active_role: UserRole = UserRole.buyer
     has_seller_profile: bool = False
     is_admin: bool = False

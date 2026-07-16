@@ -10,7 +10,6 @@ import { extractErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
 import { mediaUrl } from '@/lib/media'
 import { useAuthStore } from '@/store/authStore'
-import type { UserRole } from '@/types/user'
 
 const profileSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요.').max(100),
@@ -22,8 +21,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>
 export default function MyProfile() {
   const user = useAuthStore((state) => state.user)
   const updateMe = useUpdateMe()
+  const roleMutation = useUpdateMe()
   const [profileImagePath, setProfileImagePath] = useState<string | null>(user?.profile_image_path ?? null)
-  const [activeRole, setActiveRole] = useState<UserRole>(user?.active_role ?? 'buyer')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -56,7 +55,7 @@ export default function MyProfile() {
   const onSubmit = (values: ProfileFormValues) => {
     setSaved(false)
     updateMe.mutate(
-      { name: values.name, phone: values.phone || null, profile_image_path: profileImagePath, active_role: activeRole },
+      { name: values.name, phone: values.phone || null, profile_image_path: profileImagePath },
       { onSuccess: () => setSaved(true) },
     )
   }
@@ -101,9 +100,10 @@ export default function MyProfile() {
               <button
                 key={role}
                 type="button"
-                onClick={() => setActiveRole(role)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  activeRole === role
+                disabled={roleMutation.isPending}
+                onClick={() => roleMutation.mutate({ active_role: role })}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+                  user.active_role === role
                     ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
                     : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
                 }`}
@@ -112,9 +112,8 @@ export default function MyProfile() {
               </button>
             ))}
           </div>
-          <p className="text-xs text-neutral-400 dark:text-neutral-500">
-            언제든지 다시 바꿀 수 있어요. 화면 상단 메뉴에서도 바로 전환할 수 있습니다.
-          </p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500">클릭하면 바로 전환됩니다. 언제든지 다시 바꿀 수 있어요.</p>
+          {roleMutation.isError && <p className="text-sm text-red-500">{extractErrorMessage(roleMutation.error)}</p>}
         </div>
 
         <TextField label="이름" id="name" autoComplete="name" error={errors.name} {...register('name')} />
@@ -136,6 +135,9 @@ export default function MyProfile() {
         />
 
         <p className="text-sm text-neutral-400 dark:text-neutral-500">가입일 {formatDateTime(user.created_at)}</p>
+        <p className="text-sm text-neutral-400 dark:text-neutral-500">
+          마지막 로그인 {user.last_login_at ? formatDateTime(user.last_login_at) : '없음'}
+        </p>
 
         {updateMe.isError && <p className="text-sm text-red-500">{extractErrorMessage(updateMe.error)}</p>}
         {saved && !updateMe.isPending && <p className="text-sm text-primary-600 dark:text-primary-400">저장되었습니다.</p>}

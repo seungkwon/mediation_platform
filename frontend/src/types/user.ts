@@ -14,6 +14,7 @@ export interface UserMe {
   profile_image_path: string | null
   is_active: boolean
   created_at: string
+  last_login_at: string | null
   active_role: UserRole
   has_seller_profile: boolean
   is_admin: boolean

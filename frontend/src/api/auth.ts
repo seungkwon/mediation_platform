@@ -1,5 +1,11 @@
 import { apiClient } from './client'
 import type { LoginPayload, OAuthCallbackResult, SignupPayload, SocialProvider, TokenResponse } from '@/types/auth'
+import type { UserMe } from '@/types/user'
+
+export async function fetchMe(): Promise<UserMe> {
+  const { data } = await apiClient.get<UserMe>('/auth/me')
+  return data
+}
 
 export async function signup(payload: SignupPayload): Promise<TokenResponse> {
   const { data } = await apiClient.post<TokenResponse>('/auth/signup', payload)
