@@ -50,9 +50,10 @@ export default function RequestsList() {
           >
             <div className="flex items-center justify-between">
               <StatusBadge status={request.status} />
-              <span className="text-xs text-neutral-400">견적 {request.quote_count}건</span>
+              <span className="text-xs text-neutral-400">배정된 판매자 {request.quote_count}명</span>
             </div>
             <p className="font-medium text-neutral-900 dark:text-neutral-50">{request.title}</p>
+            <p className="text-xs text-neutral-400">요청자 {request.buyer.name}</p>
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               {request.budget_min != null || request.budget_max != null
                 ? `${request.budget_min?.toLocaleString() ?? '?'} ~ ${request.budget_max?.toLocaleString() ?? '?'}원`

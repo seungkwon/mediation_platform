@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status
@@ -64,6 +65,9 @@ async def _build_user_me(db: AsyncSession, user: User) -> UserMe:
 
 
 async def _issue_tokens(db: AsyncSession, user: User) -> TokenResponse:
+    user.last_login_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(user)
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),

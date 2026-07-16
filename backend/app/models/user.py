@@ -1,11 +1,12 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPKMixin
-from app.models.enums import SocialProvider
+from app.models.enums import SocialProvider, UserRole
 
 
 class User(UUIDPKMixin, TimestampMixin, Base):
@@ -17,6 +18,8 @@ class User(UUIDPKMixin, TimestampMixin, Base):
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     profile_image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    active_role: Mapped[UserRole] = mapped_column(String(20), default=UserRole.buyer, server_default=UserRole.buyer.value)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     social_accounts: Mapped[list["SocialAccount"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

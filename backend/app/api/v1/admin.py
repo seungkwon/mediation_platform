@@ -2,18 +2,27 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin, get_current_user
+from app.api.deps import get_current_admin, get_current_super_admin, get_current_user
 from app.db.session import get_db
-from app.models.admin import Dispute, Report
+from app.models.admin import AdminUser, Dispute, Report
 from app.models.enums import DisputeStatus, NotificationType, ReportStatus
 from app.models.notification import Notification
 from app.models.quote import Quote
 from app.models.service_request import ServiceRequest
 from app.models.user import User
-from app.schemas.admin import DisputeCreate, DisputeOut, DisputeUpdate, ReportCreate, ReportOut, ReportUpdate
+from app.schemas.admin import (
+    AdminRoleGrant,
+    AdminUserSummary,
+    DisputeCreate,
+    DisputeOut,
+    DisputeUpdate,
+    ReportCreate,
+    ReportOut,
+    ReportUpdate,
+)
 
 router = APIRouter(tags=["admin"])
 
@@ -136,3 +145,90 @@ async def update_dispute(
     await db.commit()
     await db.refresh(dispute)
     return dispute
+
+
+async def _admin_role_by_user_id(db: AsyncSession, user_id: uuid.UUID) -> AdminUser | None:
+    return (await db.execute(select(AdminUser).where(AdminUser.user_id == user_id))).scalar_one_or_none()
+
+
+@router.get("/admin/users", response_model=list[AdminUserSummary])
+async def list_admin_users(
+    search: str | None = Query(default=None),
+    admin: User = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> list[AdminUserSummary]:
+    query = select(User).order_by(User.created_at.desc())
+    if search:
+        like = f"%{search}%"
+        query = query.where(or_(User.name.ilike(like), User.email.ilike(like)))
+    users = (await db.execute(query)).scalars().all()
+
+    admin_rows = (await db.execute(select(AdminUser))).scalars().all()
+    admin_role_by_user_id = {row.user_id: row.role for row in admin_rows}
+
+    results = []
+    for target in users:
+        entry = AdminUserSummary.model_validate(target)
+        entry.admin_role = admin_role_by_user_id.get(target.id)
+        results.append(entry)
+    return results
+
+
+@router.get("/admin/users/{user_id}", response_model=AdminUserSummary)
+async def get_admin_user(
+    user_id: uuid.UUID, admin: User = Depends(get_current_admin), db: AsyncSession = Depends(get_db)
+) -> AdminUserSummary:
+    target = await db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "사용자를 찾을 수 없습니다.")
+
+    admin_row = await _admin_role_by_user_id(db, user_id)
+    entry = AdminUserSummary.model_validate(target)
+    entry.admin_role = admin_row.role if admin_row else None
+    return entry
+
+
+@router.put("/admin/users/{user_id}/admin-role", response_model=AdminUserSummary)
+async def grant_admin_role(
+    user_id: uuid.UUID,
+    payload: AdminRoleGrant,
+    admin: User = Depends(get_current_super_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AdminUserSummary:
+    target = await db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "사용자를 찾을 수 없습니다.")
+
+    admin_row = await _admin_role_by_user_id(db, user_id)
+    if admin_row is None:
+        db.add(AdminUser(user_id=user_id, role=payload.role))
+    else:
+        admin_row.role = payload.role
+    await db.commit()
+
+    entry = AdminUserSummary.model_validate(target)
+    entry.admin_role = payload.role
+    return entry
+
+
+@router.delete("/admin/users/{user_id}/admin-role", response_model=AdminUserSummary)
+async def revoke_admin_role(
+    user_id: uuid.UUID,
+    admin: User = Depends(get_current_super_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AdminUserSummary:
+    if user_id == admin.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "본인의 관리자 권한은 본인이 해제할 수 없습니다.")
+
+    target = await db.get(User, user_id)
+    if target is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "사용자를 찾을 수 없습니다.")
+
+    admin_row = await _admin_role_by_user_id(db, user_id)
+    if admin_row is not None:
+        await db.delete(admin_row)
+        await db.commit()
+
+    entry = AdminUserSummary.model_validate(target)
+    entry.admin_role = None
+    return entry

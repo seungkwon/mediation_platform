@@ -6,6 +6,8 @@ import { RootLayout } from '@/components/layout/RootLayout'
 import AdminDisputes from './AdminDisputes'
 import AdminHome from './AdminHome'
 import AdminReports from './AdminReports'
+import AdminUserDetail from './AdminUserDetail'
+import AdminUsers from './AdminUsers'
 import ChatList from './ChatList'
 import ChatRoomPage from './ChatRoomPage'
 import FaqDetail from './FaqDetail'
@@ -153,6 +155,22 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <AdminDisputes />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/users',
+        element: (
+          <RequireAuth>
+            <AdminUsers />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'admin/users/:id',
+        element: (
+          <RequireAuth>
+            <AdminUserDetail />
           </RequireAuth>
         ),
       },

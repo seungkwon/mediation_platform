@@ -43,6 +43,7 @@ export interface ServiceRequestUpdateInput {
 
 export interface ServiceRequestSummary {
   id: string
+  buyer: UserPublic
   title: string
   category_id: string | null
   budget_min: number | null

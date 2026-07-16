@@ -1,14 +1,40 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
+import { useUpdateMe } from '@/hooks/useUpdateMe'
 import { useAuthStore } from '@/store/authStore'
+import type { UserRole } from '@/types/user'
 
-const baseNavItems = [
+const loggedOutNavItems = [
   { to: '/sellers', label: '판매자 찾기' },
-  { to: '/requests', label: '서비스 요청' },
   { to: '/chat', label: '채팅' },
   { to: '/my/requests', label: '내 요청' },
   { to: '/my/quotes', label: '내 견적' },
+  { to: '/my/reviews', label: '내 리뷰' },
+  { to: '/my/profile', label: '내 정보' },
+]
+
+const commonNavItems = [{ to: '/chat', label: '채팅' }]
+
+const buyerOnlyNavItems = [
+  { to: '/sellers', label: '판매자 찾기' },
+  { to: '/my/requests', label: '내 요청' },
+]
+
+const adminOnlyNavItems = [
+  { to: '/requests', label: '서비스 요청' },
+  { to: '/admin', label: '관리자 홈' },
+  { to: '/admin/users', label: '회원 관리' },
+  { to: '/admin/reports', label: '신고 관리' },
+  { to: '/admin/disputes', label: '분쟁 관리' },
+]
+
+const sellerOnlyNavItems = [
+  { to: '/requests', label: '요청 둘러보기' },
+  { to: '/my/quotes', label: '내 견적' },
+]
+
+const alwaysNavItems = [
   { to: '/my/reviews', label: '내 리뷰' },
   { to: '/my/profile', label: '내 정보' },
 ]
@@ -27,13 +53,54 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
   }`
 
+function RoleToggle({ role, onChange, disabled }: { role: UserRole; onChange: (role: UserRole) => void; disabled: boolean }) {
+  return (
+    <div className="inline-flex rounded-md border border-neutral-200 p-0.5 text-xs font-medium dark:border-neutral-700">
+      {(['buyer', 'seller'] as const).map((r) => (
+        <button
+          key={r}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(r)}
+          className={`rounded px-2 py-1 transition-colors disabled:opacity-60 ${
+            role === r
+              ? 'bg-primary-500 text-white'
+              : 'text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
+          }`}
+        >
+          {r === 'buyer' ? '구매자 모드' : '판매자 모드'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
-  const navItems = user
-    ? [...baseNavItems, ...boardNavItems, { to: `/sellers/${user.id}`, label: '판매자 프로필' }]
-    : baseNavItems
+  const updateMe = useUpdateMe()
+
+  const rawNavItems = user
+    ? [
+        ...commonNavItems,
+        ...(user.active_role === 'seller' ? sellerOnlyNavItems : buyerOnlyNavItems),
+        ...alwaysNavItems,
+        ...boardNavItems,
+        ...(user.active_role === 'seller' && user.has_seller_profile
+          ? [{ to: `/sellers/${user.id}`, label: '판매자 프로필' }]
+          : []),
+        ...(user.is_admin ? adminOnlyNavItems : []),
+      ]
+    : loggedOutNavItems
+
+  // 같은 경로가 여러 그룹(예: 판매자 모드 + 관리자)에 동시에 걸리면 마지막 라벨만 남긴다.
+  const navItems = Array.from(new Map(rawNavItems.map((item) => [item.to, item])).values())
+
+  const changeRole = (role: UserRole) => {
+    if (!user || user.active_role === role) return
+    updateMe.mutate({ active_role: role })
+  }
 
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90">
@@ -43,9 +110,10 @@ export function Header() {
             중계 플랫폼
           </Link>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
             {user ? (
               <>
+                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} />
                 <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
                 <button
                   type="button"
@@ -102,23 +170,26 @@ export function Header() {
               {item.label}
             </NavLink>
           ))}
-          <div className="mt-2 flex items-center gap-2 border-t border-neutral-200 pt-2 dark:border-neutral-800">
+          <div className="mt-2 flex flex-col gap-2 border-t border-neutral-200 pt-2 dark:border-neutral-800">
             {user ? (
               <>
-                <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout()
-                    setMenuOpen(false)
-                  }}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300"
-                >
-                  로그아웃
-                </button>
+                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout()
+                      setMenuOpen(false)
+                    }}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               </>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300" onClick={() => setMenuOpen(false)}>
                   로그인
                 </Link>
@@ -129,7 +200,7 @@ export function Header() {
                 >
                   회원가입
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </nav>

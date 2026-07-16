@@ -3,8 +3,10 @@ import { useParams } from 'react-router-dom'
 
 import { PagePlaceholder } from '@/components/common/PagePlaceholder'
 import { useChatMessages } from '@/hooks/useChatMessages'
+import { useChatRooms } from '@/hooks/useChatRooms'
 import { useChatSocket } from '@/hooks/useChatSocket'
 import { formatDateTime } from '@/lib/format'
+import { mediaUrl } from '@/lib/media'
 import { useAuthStore } from '@/store/authStore'
 import type { ChatMessage } from '@/types/chat'
 
@@ -12,6 +14,9 @@ export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const user = useAuthStore((state) => state.user)
   const messagesQuery = useChatMessages(roomId)
+  const roomsQuery = useChatRooms()
+  const room = roomsQuery.data?.find((r) => r.id === roomId)
+  const other = room && (room.buyer.id === user?.id ? room.seller : room.buyer)
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -44,7 +49,12 @@ export default function ChatRoomPage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-6">
       <div className="flex items-center justify-between border-b border-neutral-200 pb-3 dark:border-neutral-800">
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">채팅</h1>
+        <div className="flex items-center gap-2">
+          {other?.profile_image_path && (
+            <img src={mediaUrl(other.profile_image_path)} alt="" className="size-8 rounded-full object-cover" />
+          )}
+          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{other?.name ?? '채팅'}</h1>
+        </div>
         <span className={`text-xs ${connected ? 'text-green-500' : 'text-neutral-400'}`}>
           {connected ? '연결됨' : '연결 중...'}
         </span>

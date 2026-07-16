@@ -91,6 +91,9 @@ export default function OAuthCompleteSignup() {
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
         />
+        <p className="text-xs text-neutral-400 dark:text-neutral-500">
+          가입 후 구매자/판매자 모드를 선택해 이용할 수 있으며, 언제든 "내 정보"에서 변경할 수 있습니다.
+        </p>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button
           type="submit"

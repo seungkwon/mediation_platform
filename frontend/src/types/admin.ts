@@ -34,3 +34,18 @@ export interface DisputeUpdateInput {
   status: DisputeStatus
   admin_note?: string | null
 }
+
+export type AdminRole = 'super_admin' | 'moderator'
+
+export interface AdminUserSummary {
+  id: string
+  email: string
+  name: string
+  phone: string | null
+  profile_image_path: string | null
+  is_active: boolean
+  active_role: 'buyer' | 'seller'
+  admin_role: AdminRole | null
+  created_at: string
+  last_login_at: string | null
+}

@@ -8,6 +8,11 @@ class SocialProvider(str, enum.Enum):
     apple = "apple"
 
 
+class UserRole(str, enum.Enum):
+    buyer = "buyer"
+    seller = "seller"
+
+
 class PortfolioStatus(str, enum.Enum):
     draft = "draft"
     published = "published"

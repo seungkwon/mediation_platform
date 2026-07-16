@@ -17,6 +17,7 @@ export function useUpdateMe() {
         name: payload.name ?? user.name,
         phone: payload.phone === undefined ? user.phone : payload.phone,
         profile_image_path: payload.profile_image_path === undefined ? user.profile_image_path : payload.profile_image_path,
+        active_role: payload.active_role ?? user.active_role,
       })
     },
   })

@@ -74,6 +74,7 @@ async def list_service_requests(
     query = (
         select(ServiceRequest, func.count(Quote.id))
         .outerjoin(Quote, Quote.service_request_id == ServiceRequest.id)
+        .options(selectinload(ServiceRequest.buyer))
         .group_by(ServiceRequest.id)
     )
     if category_id is not None:
@@ -99,6 +100,7 @@ async def list_my_service_requests(
     query = (
         select(ServiceRequest, func.count(Quote.id))
         .outerjoin(Quote, Quote.service_request_id == ServiceRequest.id)
+        .options(selectinload(ServiceRequest.buyer))
         .where(ServiceRequest.buyer_id == user.id)
         .group_by(ServiceRequest.id)
         .order_by(ServiceRequest.created_at.desc())

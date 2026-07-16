@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import DisputeStatus, ReportStatus, ReportTargetType
+from app.models.enums import AdminRole, DisputeStatus, ReportStatus, ReportTargetType, UserRole
 from app.schemas.common import ORMBase
 
 
@@ -49,3 +49,20 @@ class DisputeOut(ORMBase):
     admin_note: str | None = None
     created_at: datetime
     resolved_at: datetime | None = None
+
+
+class AdminUserSummary(ORMBase):
+    id: uuid.UUID
+    email: str
+    name: str
+    phone: str | None = None
+    profile_image_path: str | None = None
+    is_active: bool
+    active_role: UserRole
+    admin_role: AdminRole | None = None
+    created_at: datetime
+    last_login_at: datetime | None = None
+
+
+class AdminRoleGrant(BaseModel):
+    role: AdminRole = AdminRole.moderator

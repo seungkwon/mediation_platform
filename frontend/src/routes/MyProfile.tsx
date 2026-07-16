@@ -10,6 +10,7 @@ import { extractErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
 import { mediaUrl } from '@/lib/media'
 import { useAuthStore } from '@/store/authStore'
+import type { UserRole } from '@/types/user'
 
 const profileSchema = z.object({
   name: z.string().min(1, '이름을 입력해주세요.').max(100),
@@ -22,6 +23,7 @@ export default function MyProfile() {
   const user = useAuthStore((state) => state.user)
   const updateMe = useUpdateMe()
   const [profileImagePath, setProfileImagePath] = useState<string | null>(user?.profile_image_path ?? null)
+  const [activeRole, setActiveRole] = useState<UserRole>(user?.active_role ?? 'buyer')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -54,7 +56,7 @@ export default function MyProfile() {
   const onSubmit = (values: ProfileFormValues) => {
     setSaved(false)
     updateMe.mutate(
-      { name: values.name, phone: values.phone || null, profile_image_path: profileImagePath },
+      { name: values.name, phone: values.phone || null, profile_image_path: profileImagePath, active_role: activeRole },
       { onSuccess: () => setSaved(true) },
     )
   }
@@ -90,6 +92,29 @@ export default function MyProfile() {
             />
           </label>
           {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">이용 모드</label>
+          <div className="flex gap-2">
+            {(['buyer', 'seller'] as const).map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setActiveRole(role)}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  activeRole === role
+                    ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900 dark:text-primary-200'
+                    : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                }`}
+              >
+                {role === 'buyer' ? '구매자로 이용' : '판매자로 이용'}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500">
+            언제든지 다시 바꿀 수 있어요. 화면 상단 메뉴에서도 바로 전환할 수 있습니다.
+          </p>
         </div>
 
         <TextField label="이름" id="name" autoComplete="name" error={errors.name} {...register('name')} />

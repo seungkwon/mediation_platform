@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { useChatRooms } from '@/hooks/useChatRooms'
 import { formatDateTime } from '@/lib/format'
+import { mediaUrl } from '@/lib/media'
 import { useAuthStore } from '@/store/authStore'
 
 export default function ChatList() {
@@ -24,7 +25,16 @@ export default function ChatList() {
               className="flex flex-col gap-1 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium text-neutral-900 dark:text-neutral-50">{other.name}</span>
+                <div className="flex items-center gap-2">
+                  {other.profile_image_path && (
+                    <img
+                      src={mediaUrl(other.profile_image_path)}
+                      alt=""
+                      className="size-8 rounded-full object-cover"
+                    />
+                  )}
+                  <span className="font-medium text-neutral-900 dark:text-neutral-50">{other.name}</span>
+                </div>
                 {room.last_message_at && (
                   <span className="text-xs text-neutral-400">{formatDateTime(room.last_message_at)}</span>
                 )}

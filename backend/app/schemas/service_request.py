@@ -50,6 +50,7 @@ class ServiceRequestUpdate(BaseModel):
 
 class ServiceRequestSummary(ORMBase):
     id: uuid.UUID
+    buyer: UserPublic
     title: str
     category_id: uuid.UUID | None = None
     budget_min: int | None = None

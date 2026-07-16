@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import TokenType, decode_token
 from app.db.session import get_db
 from app.models.admin import AdminUser
+from app.models.enums import AdminRole
 from app.models.user import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -57,4 +58,15 @@ async def get_current_admin(
 ) -> User:
     if not await is_admin(db, user):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "관리자 권한이 필요합니다.")
+    return user
+
+
+async def get_current_super_admin(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    result = await db.execute(select(AdminUser).where(AdminUser.user_id == user.id))
+    admin_user = result.scalar_one_or_none()
+    if admin_user is None or admin_user.role != AdminRole.super_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "최고 관리자 권한이 필요합니다.")
     return user
