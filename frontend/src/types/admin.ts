@@ -44,7 +44,7 @@ export interface AdminUserSummary {
   phone: string | null
   profile_image_path: string | null
   is_active: boolean
-  active_role: 'buyer' | 'seller'
+  active_role: 'buyer' | 'seller' | 'admin'
   admin_role: AdminRole | null
   created_at: string
   last_login_at: string | null

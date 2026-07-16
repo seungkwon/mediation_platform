@@ -11,6 +11,7 @@ class SocialProvider(str, enum.Enum):
 class UserRole(str, enum.Enum):
     buyer = "buyer"
     seller = "seller"
+    admin = "admin"
 
 
 class PortfolioStatus(str, enum.Enum):

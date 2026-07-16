@@ -97,7 +97,7 @@ export default function MyProfile() {
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">이용 모드</label>
           <div className="flex gap-2">
-            {(['buyer', 'seller'] as const).map((role) => (
+            {(user.is_admin ? (['buyer', 'seller', 'admin'] as const) : (['buyer', 'seller'] as const)).map((role) => (
               <button
                 key={role}
                 type="button"
@@ -108,7 +108,7 @@ export default function MyProfile() {
                     : 'border-neutral-300 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800'
                 }`}
               >
-                {role === 'buyer' ? '구매자로 이용' : '판매자로 이용'}
+                {role === 'buyer' ? '구매자로 이용' : role === 'seller' ? '판매자로 이용' : '관리자로 이용'}
               </button>
             ))}
           </div>

@@ -5,9 +5,10 @@ import { useAdminUsers } from '@/hooks/useAdmin'
 import { formatDateTime } from '@/lib/format'
 import { mediaUrl } from '@/lib/media'
 
-const ADMIN_ROLE_LABEL: Record<string, string> = {
-  super_admin: '최고 관리자',
-  moderator: '운영자',
+const ACTIVE_ROLE_LABEL: Record<string, string> = {
+  buyer: '구매자 모드',
+  seller: '판매자 모드',
+  admin: '관리자 모드',
 }
 
 export default function AdminUsers() {
@@ -48,12 +49,12 @@ export default function AdminUsers() {
               </div>
               {user.admin_role && (
                 <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-200">
-                  {ADMIN_ROLE_LABEL[user.admin_role] ?? user.admin_role}
+                  관리자
                 </span>
               )}
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-neutral-400">
-              <span>{user.active_role === 'seller' ? '판매자 모드' : '구매자 모드'}</span>
+              <span>{ACTIVE_ROLE_LABEL[user.active_role] ?? user.active_role}</span>
               {!user.is_active && <span className="text-red-500">비활성화됨</span>}
               <span>가입 {formatDateTime(user.created_at)}</span>
               <span>마지막 로그인 {user.last_login_at ? formatDateTime(user.last_login_at) : '없음'}</span>

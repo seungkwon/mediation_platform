@@ -53,10 +53,27 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
   }`
 
-function RoleToggle({ role, onChange, disabled }: { role: UserRole; onChange: (role: UserRole) => void; disabled: boolean }) {
+const ROLE_TOGGLE_LABEL: Record<UserRole, string> = {
+  buyer: '구매자 모드',
+  seller: '판매자 모드',
+  admin: '관리자 모드',
+}
+
+function RoleToggle({
+  role,
+  onChange,
+  disabled,
+  showAdmin,
+}: {
+  role: UserRole
+  onChange: (role: UserRole) => void
+  disabled: boolean
+  showAdmin: boolean
+}) {
+  const roles: UserRole[] = showAdmin ? ['buyer', 'seller', 'admin'] : ['buyer', 'seller']
   return (
     <div className="inline-flex rounded-md border border-neutral-200 p-0.5 text-xs font-medium dark:border-neutral-700">
-      {(['buyer', 'seller'] as const).map((r) => (
+      {roles.map((r) => (
         <button
           key={r}
           type="button"
@@ -68,7 +85,7 @@ function RoleToggle({ role, onChange, disabled }: { role: UserRole; onChange: (r
               : 'text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
           }`}
         >
-          {r === 'buyer' ? '구매자 모드' : '판매자 모드'}
+          {ROLE_TOGGLE_LABEL[r]}
         </button>
       ))}
     </div>
@@ -82,16 +99,17 @@ export function Header() {
   const updateMe = useUpdateMe()
 
   const rawNavItems = user
-    ? [
-        ...commonNavItems,
-        ...(user.active_role === 'seller' ? sellerOnlyNavItems : buyerOnlyNavItems),
-        ...alwaysNavItems,
-        ...boardNavItems,
-        ...(user.active_role === 'seller' && user.has_seller_profile
-          ? [{ to: `/sellers/${user.id}`, label: '판매자 프로필' }]
-          : []),
-        ...(user.is_admin ? adminOnlyNavItems : []),
-      ]
+    ? user.active_role === 'admin'
+      ? [...adminOnlyNavItems, ...alwaysNavItems, ...boardNavItems]
+      : [
+          ...commonNavItems,
+          ...(user.active_role === 'seller' ? sellerOnlyNavItems : buyerOnlyNavItems),
+          ...alwaysNavItems,
+          ...boardNavItems,
+          ...(user.active_role === 'seller' && user.has_seller_profile
+            ? [{ to: `/sellers/${user.id}`, label: '판매자 프로필' }]
+            : []),
+        ]
     : loggedOutNavItems
 
   // 같은 경로가 여러 그룹(예: 판매자 모드 + 관리자)에 동시에 걸리면 마지막 라벨만 남긴다.
@@ -113,7 +131,7 @@ export function Header() {
           <div className="hidden items-center gap-3 md:flex">
             {user ? (
               <>
-                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} />
+                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} showAdmin={user.is_admin} />
                 <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
                 <button
                   type="button"
@@ -173,7 +191,7 @@ export function Header() {
           <div className="mt-2 flex flex-col gap-2 border-t border-neutral-200 pt-2 dark:border-neutral-800">
             {user ? (
               <>
-                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} />
+                <RoleToggle role={user.active_role} onChange={changeRole} disabled={updateMe.isPending} showAdmin={user.is_admin} />
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
                   <button

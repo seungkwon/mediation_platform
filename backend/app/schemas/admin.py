@@ -65,4 +65,4 @@ class AdminUserSummary(ORMBase):
 
 
 class AdminRoleGrant(BaseModel):
-    role: AdminRole = AdminRole.moderator
+    role: AdminRole = AdminRole.super_admin

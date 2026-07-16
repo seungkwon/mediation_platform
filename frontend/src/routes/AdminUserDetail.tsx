@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { grantAdminRole, revokeAdminRole } from '@/api/admin'
@@ -7,21 +6,20 @@ import { useAdminUser } from '@/hooks/useAdmin'
 import { extractErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
 import { mediaUrl } from '@/lib/media'
-import type { AdminRole } from '@/types/admin'
 
-const ROLE_OPTIONS: { value: AdminRole; label: string }[] = [
-  { value: 'moderator', label: '운영자' },
-  { value: 'super_admin', label: '최고 관리자' },
-]
+const ACTIVE_ROLE_LABEL: Record<string, string> = {
+  buyer: '구매자',
+  seller: '판매자',
+  admin: '관리자',
+}
 
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>()
   const userQuery = useAdminUser(id)
   const queryClient = useQueryClient()
-  const [role, setRole] = useState<AdminRole>('moderator')
 
   const grantMutation = useMutation({
-    mutationFn: () => grantAdminRole(id!, role),
+    mutationFn: () => grantAdminRole(id!, 'super_admin'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
     },
@@ -67,7 +65,9 @@ export default function AdminUserDetail() {
         </div>
         <div className="flex justify-between">
           <span className="text-neutral-400">이용 모드</span>
-          <span className="text-neutral-900 dark:text-neutral-50">{user.active_role === 'seller' ? '판매자' : '구매자'}</span>
+          <span className="text-neutral-900 dark:text-neutral-50">
+            {ACTIVE_ROLE_LABEL[user.active_role] ?? user.active_role}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-neutral-400">계정 상태</span>
@@ -89,31 +89,18 @@ export default function AdminUserDetail() {
 
       <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">관리자 권한</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          현재: {user.admin_role === 'super_admin' ? '최고 관리자' : user.admin_role === 'moderator' ? '운영자' : '일반 회원'}
-        </p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">현재: {user.admin_role ? '관리자' : '일반 회원'}</p>
 
-        <div className="flex gap-2">
-          <select
-            value={role}
-            onChange={(event) => setRole(event.target.value as AdminRole)}
-            className="rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        {!user.admin_role && (
           <button
             type="button"
             onClick={() => grantMutation.mutate()}
             disabled={grantMutation.isPending}
-            className="rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
+            className="self-start rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-60"
           >
-            {grantMutation.isPending ? '적용 중...' : '권한 부여'}
+            {grantMutation.isPending ? '적용 중...' : '관리자 권한 부여'}
           </button>
-        </div>
+        )}
 
         {user.admin_role && (
           <button
