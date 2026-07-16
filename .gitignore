@@ -21,3 +21,7 @@ docker/.env
 Thumbs.db
 .vscode/
 *.log
+
+# Backup data (실제 DB/업로드 파일 포함, 스크립트만 git에 커밋)
+backup/db_backup.dump
+backup/uploads_backup.zip
