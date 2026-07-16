@@ -2,13 +2,66 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { PagePlaceholder } from '@/components/common/PagePlaceholder'
+import { uploadFile } from '@/api/uploads'
 import { useChatMessages } from '@/hooks/useChatMessages'
 import { useChatRooms } from '@/hooks/useChatRooms'
 import { useChatSocket } from '@/hooks/useChatSocket'
+import { extractErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
 import { mediaUrl } from '@/lib/media'
 import { useAuthStore } from '@/store/authStore'
-import type { ChatMessage } from '@/types/chat'
+import type { ChatMessage, ChatMessageType } from '@/types/chat'
+
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp'])
+const VIDEO_EXTENSIONS = new Set(['mp4', 'mov', 'webm'])
+
+function detectMessageType(filename: string): ChatMessageType {
+  const ext = filename.split('.').pop()?.toLowerCase() ?? ''
+  if (IMAGE_EXTENSIONS.has(ext)) return 'image'
+  if (VIDEO_EXTENSIONS.has(ext)) return 'video'
+  return 'file'
+}
+
+function MessageBody({ message, isMine }: Readonly<{ message: ChatMessage; isMine: boolean }>) {
+  const bubbleClass = isMine
+    ? 'bg-primary-500 text-white'
+    : 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+
+  if (message.message_type === 'image' && message.file_path) {
+    return (
+      <a href={mediaUrl(message.file_path)} target="_blank" rel="noreferrer">
+        <img
+          src={mediaUrl(message.file_path)}
+          alt={message.original_filename ?? '이미지'}
+          className="max-h-64 max-w-[75%] rounded-2xl object-cover"
+        />
+      </a>
+    )
+  }
+
+  if (message.message_type === 'video' && message.file_path) {
+    return (
+      <video src={mediaUrl(message.file_path)} controls className="max-h-64 max-w-[75%] rounded-2xl">
+        <track kind="captions" />
+      </video>
+    )
+  }
+
+  if (message.message_type === 'file' && message.file_path) {
+    return (
+      <a
+        href={mediaUrl(message.file_path)}
+        target="_blank"
+        rel="noreferrer"
+        className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm underline ${bubbleClass}`}
+      >
+        📎 {message.original_filename ?? '첨부파일'}
+      </a>
+    )
+  }
+
+  return <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${bubbleClass}`}>{message.content}</div>
+}
 
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -19,7 +72,10 @@ export default function ChatRoomPage() {
   const other = room && (room.buyer.id === user?.id ? room.seller : room.buyer)
   const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { connected, sendMessage } = useChatSocket(roomId, (message) => {
     setLiveMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]))
@@ -44,6 +100,24 @@ export default function ChatRoomPage() {
     if (!draft.trim()) return
     sendMessage({ message_type: 'text', content: draft.trim() })
     setDraft('')
+  }
+
+  const handleFileSelect = async (file: File | undefined) => {
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const result = await uploadFile('chat', file)
+      sendMessage({
+        message_type: detectMessageType(file.name),
+        file_path: result.file_path,
+        original_filename: result.original_filename,
+      })
+    } catch (error) {
+      setUploadError(extractErrorMessage(error))
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -72,15 +146,7 @@ export default function ChatRoomPage() {
           const isMine = message.sender_id === user?.id
           return (
             <div key={message.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
-                  isMine
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
-                }`}
-              >
-                {message.content}
-              </div>
+              <MessageBody message={message} isMine={isMine} />
               <span className="mt-1 text-xs text-neutral-400">{formatDateTime(message.created_at)}</span>
             </div>
           )
@@ -88,7 +154,27 @@ export default function ChatRoomPage() {
         <div ref={bottomRef} />
       </div>
 
+      {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+
       <div className="flex gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.hwp,.zip,.rar"
+          className="hidden"
+          onChange={(event) => {
+            void handleFileSelect(event.target.files?.[0])
+            event.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={!connected || uploading}
+          className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
+        >
+          {uploading ? '업로드 중...' : '📎'}
+        </button>
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}

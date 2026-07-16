@@ -38,6 +38,7 @@ class ChatMessage(UUIDPKMixin, Base):
     message_type: Mapped[ChatMessageType] = mapped_column(String(20), default=ChatMessageType.text)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

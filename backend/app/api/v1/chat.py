@@ -10,7 +10,7 @@ from app.api.deps import get_current_user
 from app.core.security import TokenType, decode_token
 from app.db.session import AsyncSessionLocal, get_db
 from app.models.chat import ChatMessage, ChatRoom
-from app.models.enums import NotificationType
+from app.models.enums import ChatMessageType, NotificationType
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.chat import ChatMessageCreate, ChatMessageOut, ChatRoomOut
@@ -34,6 +34,16 @@ async def _get_room_or_404(db: AsyncSession, room_id: uuid.UUID) -> ChatRoom:
 def _ensure_participant(room: ChatRoom, user_id: uuid.UUID) -> None:
     if room.buyer_id != user_id and room.seller_id != user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "채팅방 참여자만 접근할 수 있습니다.")
+
+
+def _preview_text(message: ChatMessage) -> str | None:
+    if message.message_type == ChatMessageType.image:
+        return "[이미지]"
+    if message.message_type == ChatMessageType.video:
+        return "[동영상]"
+    if message.message_type == ChatMessageType.file:
+        return f"[파일] {message.original_filename}" if message.original_filename else "[파일]"
+    return message.content
 
 
 @router.get("/chat/rooms", response_model=list[ChatRoomOut])
@@ -63,7 +73,7 @@ async def list_chat_rooms(
                 service_request_title=room.service_request.title,
                 buyer=room.buyer,
                 seller=room.seller,
-                last_message=last.content if last else None,
+                last_message=_preview_text(last) if last else None,
                 last_message_at=last.created_at if last else None,
                 created_at=room.created_at,
             )
@@ -126,6 +136,7 @@ async def chat_websocket(websocket: WebSocket, room_id: uuid.UUID, token: str) -
                     message_type=payload.message_type,
                     content=payload.content,
                     file_path=payload.file_path,
+                    original_filename=payload.original_filename,
                 )
                 db.add(message)
 

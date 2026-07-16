@@ -1,6 +1,6 @@
 import type { UserPublic } from './user'
 
-export type ChatMessageType = 'text' | 'image' | 'file'
+export type ChatMessageType = 'text' | 'image' | 'video' | 'file'
 
 export interface ChatRoom {
   id: string
@@ -20,6 +20,7 @@ export interface ChatMessage {
   message_type: ChatMessageType
   content: string | null
   file_path: string | null
+  original_filename: string | null
   read_at: string | null
   created_at: string
 }
@@ -28,4 +29,5 @@ export interface ChatMessageCreateInput {
   message_type?: ChatMessageType
   content?: string | null
   file_path?: string | null
+  original_filename?: string | null
 }

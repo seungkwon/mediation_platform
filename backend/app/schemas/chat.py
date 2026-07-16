@@ -23,6 +23,7 @@ class ChatMessageCreate(BaseModel):
     message_type: ChatMessageType = ChatMessageType.text
     content: str | None = None
     file_path: str | None = None
+    original_filename: str | None = None
 
 
 class ChatMessageOut(ORMBase):
@@ -32,5 +33,6 @@ class ChatMessageOut(ORMBase):
     message_type: ChatMessageType
     content: str | None = None
     file_path: str | None = None
+    original_filename: str | None = None
     read_at: datetime | None = None
     created_at: datetime

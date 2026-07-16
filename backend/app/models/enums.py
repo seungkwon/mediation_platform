@@ -56,6 +56,7 @@ class QuoteStatus(str, enum.Enum):
 class ChatMessageType(str, enum.Enum):
     text = "text"
     image = "image"
+    video = "video"
     file = "file"
 
 
