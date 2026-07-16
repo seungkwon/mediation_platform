@@ -10,6 +10,7 @@ const baseNavItems = [
   { to: '/my/requests', label: '내 요청' },
   { to: '/my/quotes', label: '내 견적' },
   { to: '/my/reviews', label: '내 리뷰' },
+  { to: '/my/profile', label: '내 정보' },
 ]
 
 const boardNavItems = [
@@ -36,60 +37,62 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link to="/" className="text-lg font-bold text-primary-600 dark:text-primary-400">
-          중계 플랫폼
-        </Link>
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="flex items-center justify-between gap-4 py-3">
+          <Link to="/" className="text-lg font-bold text-primary-600 dark:text-primary-400">
+            중계 플랫폼
+          </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-2 md:flex">
+            {user ? (
+              <>
+                <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                  로그인
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-md bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600"
+                >
+                  회원가입
+                </Link>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="rounded-md p-2 text-neutral-600 md:hidden dark:text-neutral-300"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="메뉴 열기"
+            aria-expanded={menuOpen}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+
+        <nav className="hidden flex-wrap items-center gap-1 border-t border-neutral-200 py-2 md:flex dark:border-neutral-800">
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} className={navLinkClass}>
               {item.label}
             </NavLink>
           ))}
         </nav>
-
-        <div className="hidden items-center gap-2 md:flex">
-          {user ? (
-            <>
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">{user.name}님</span>
-              <button
-                type="button"
-                onClick={logout}
-                className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                로그아웃
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="rounded-md px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                로그인
-              </Link>
-              <Link
-                to="/signup"
-                className="rounded-md bg-primary-500 px-3 py-2 text-sm font-medium text-white hover:bg-primary-600"
-              >
-                회원가입
-              </Link>
-            </>
-          )}
-        </div>
-
-        <button
-          type="button"
-          className="rounded-md p-2 text-neutral-600 md:hidden dark:text-neutral-300"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label="메뉴 열기"
-          aria-expanded={menuOpen}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
       </div>
 
       {menuOpen && (

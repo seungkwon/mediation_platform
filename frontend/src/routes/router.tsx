@@ -14,6 +14,7 @@ import FaqList from './FaqList'
 import FaqNew from './FaqNew'
 import Home from './Home'
 import Login from './Login'
+import MyProfile from './MyProfile'
 import MyQuotes from './MyQuotes'
 import MyRequests from './MyRequests'
 import MyReviews from './MyReviews'
@@ -96,6 +97,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <MyQuotes />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'my/profile',
+        element: (
+          <RequireAuth>
+            <MyProfile />
           </RequireAuth>
         ),
       },

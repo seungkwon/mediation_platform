@@ -45,13 +45,13 @@ Callback URL 자체는 [oauth-callback-urls.md](./oauth-callback-urls.md)에 정
 7. **[앱] → [플랫폼 키] → [REST API 키] → [클라이언트 시크릿]** → **코드 생성** → 발급된 값 → `.env`의 `KAKAO_CLIENT_SECRET`
    - 생성 후 **활성화 상태(ON)**로 바꿔야 실제로 사용됨.
    - (콘솔 버전에 따라 이 메뉴가 **[앱] → [보안]** 탭으로 표시되기도 한다 — 명칭은 달라도 REST API 키 화면 안에 있다.)
-REST_API_KEY = 6879676fcde4192ba4fd35faa106d0a4
-CLIENT_SECRET = 2uTgWYbVcZtWzj3neqlei36qw8v0mO9a
+
 ---
 
 ## 3. Google — [Google Cloud Console](https://console.cloud.google.com/)
 
-Google은 2025~2026년에 걸쳐 콘솔이 **Google Auth Platform**으로 개편되었다 (기존 "OAuth 동의 화면" 메뉴가 별도 섹션으로 분리).
+Google은 2025~2026년에 걸쳐 콘솔이 **Google Auth Platform**(Google 인증 플랫폼)으로
+개편되었다 (기존 "OAuth 동의 화면" 메뉴가 별도 섹션으로 분리).
 
 1. 프로젝트 선택/생성 (없으면 상단 프로젝트 선택기에서 새 프로젝트 생성).
 2. 좌측 메뉴 **API 및 서비스 → Google Auth Platform** (또는 "OAuth 동의 화면") 진입.

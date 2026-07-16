@@ -15,3 +15,9 @@ export interface UserMe {
   has_seller_profile: boolean
   is_admin: boolean
 }
+
+export interface UserUpdateInput {
+  name?: string
+  phone?: string | null
+  profile_image_path?: string | null
+}
